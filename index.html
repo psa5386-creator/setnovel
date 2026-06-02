@@ -7,9 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Story Atelier</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
 <style>
 /* ═══════════════════════════════════════
    STORY ATELIER v2506.1
@@ -2097,10 +2095,17 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
   <div class="image-viewer-dots" id="imageViewerDots"></div>
 </div>
 
-<script>
+<script type="module">
 /* ═══════════════════════════════════════
    STORY ATELIER - Script v2506.1
 ═══════════════════════════════════════ */
+
+// ════════════════════════════════════════
+//  Firebase SDK (모듈 방식)
+// ════════════════════════════════════════
+import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref as dbRef, set, update, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getStorage, ref as storageRef2, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
 // ════════════════════════════════════════
 //  Firebase 설정
@@ -2116,9 +2121,48 @@ const FIREBASE_CONFIG = {
   measurementId:     "G-NHQ8MLVWPC",
 };
 
-firebase.initializeApp(FIREBASE_CONFIG);
-const db      = firebase.database();
-const storage = firebase.storage();
+const _fbApp  = initializeApp(FIREBASE_CONFIG);
+const _db     = getDatabase(_fbApp);
+const _storage = getStorage(_fbApp);
+
+// ── compat 방식 래퍼 (기존 코드 변경 최소화) ──
+const _listeners = {}; // { path: unsubscribeFn }
+const db = {
+  ref: (path) => ({
+    _path: path,
+    on: (evt, cb, errCb) => {
+      const r = dbRef(_db, path);
+      const unsub = onValue(r, cb, errCb || (e => console.error(e)));
+      _listeners[path] = unsub;
+      return unsub;
+    },
+    off: (evt, cb) => {
+      if (_listeners[path]) { _listeners[path](); delete _listeners[path]; }
+    },
+    set:    (val) => set(dbRef(_db, path), val),
+    update: (val) => update(dbRef(_db, path), val),
+    remove: () => remove(dbRef(_db, path)),
+    get:    () => get(dbRef(_db, path)),
+    child:  (c) => db.ref(path + '/' + c),
+  }),
+};
+const storage = {
+  ref: (path) => ({
+    _path: path,
+    put:            (file) => uploadBytes(storageRef2(_storage, path), file),
+    getDownloadURL: () => getDownloadURL(storageRef2(_storage, path)),
+    delete:         () => deleteObject(storageRef2(_storage, path)),
+  }),
+  refFromURL: (url) => ({
+    delete: async () => {
+      try {
+        // URL에서 path 추출해서 삭제
+        const path = decodeURIComponent(url.split('/o/')[1].split('?')[0]);
+        await deleteObject(storageRef2(_storage, path));
+      } catch(e) { console.warn('Storage 삭제 실패:', e); }
+    }
+  }),
+};
 
 // ── Firebase 연결 상태 테스트 (디버그용) ──
 function showFirebaseStatus(msg, isError) {
@@ -5177,7 +5221,7 @@ function addImageToBlock(btn) {
 }
 
 // 파일 선택 후 처리 (다중)
-function onImagesSelected(fileInput) {
+async function onImagesSelected(fileInput) {
   const files = [...fileInput.files];
   if (!files.length) return;
   const block = fileInput.closest('.block-card');
