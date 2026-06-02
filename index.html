@@ -2164,6 +2164,15 @@ const storage = {
   }),
 };
 
+// ── 전역 에러 핸들러 (디버그용) ──
+window.onerror = function(msg, src, line, col, err) {
+  showFirebaseStatus('JS 오류 L' + line + ': ' + msg, true);
+  return false;
+};
+window.addEventListener('unhandledrejection', e => {
+  showFirebaseStatus('Promise 오류: ' + (e.reason?.message || e.reason), true);
+});
+
 // ── Firebase 연결 상태 테스트 (디버그용) ──
 function showFirebaseStatus(msg, isError) {
   const ls = document.getElementById('launchScreen');
