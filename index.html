@@ -2165,12 +2165,23 @@ const storage = {
 };
 
 // ── 전역 에러 핸들러 (디버그용) ──
+function showDebugError(msg) {
+  let el = document.getElementById('_debugErr');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = '_debugErr';
+    el.style.cssText = 'position:fixed;bottom:80px;left:10px;right:10px;z-index:99999;background:rgba(192,57,43,0.9);color:#fff;font-size:11px;padding:8px 10px;border-radius:8px;word-break:break-all;max-height:120px;overflow-y:auto;';
+    document.body.appendChild(el);
+  }
+  el.textContent += msg + '
+';
+}
 window.onerror = function(msg, src, line, col, err) {
-  showFirebaseStatus('JS 오류 L' + line + ': ' + msg, true);
+  showDebugError('L' + line + ': ' + msg);
   return false;
 };
 window.addEventListener('unhandledrejection', e => {
-  showFirebaseStatus('Promise 오류: ' + (e.reason?.message || e.reason), true);
+  showDebugError('Promise: ' + (e.reason?.message || String(e.reason)));
 });
 
 // ── Firebase 연결 상태 테스트 (디버그용) ──
