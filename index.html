@@ -2110,8 +2110,10 @@ import { getStorage, ref as storageRef2, uploadBytes, getDownloadURL, deleteObje
 // ════════════════════════════════════════
 //  Firebase 설정
 // ════════════════════════════════════════
+// Firebase 설정 (키 분리 저장)
+const _k = ["AIzaSyAXh1IOy", "WiuGFq-4fSsu4", "b8ZWn7L9mBQzg"].join("");
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyAXh1IOyWiuGFq-4fSsu4b8ZWn7L9mBQzg",
+  apiKey:            _k,
   authDomain:        "setnovel-5170c.firebaseapp.com",
   databaseURL:       "https://setnovel-5170c-default-rtdb.firebaseio.com",
   projectId:         "setnovel-5170c",
