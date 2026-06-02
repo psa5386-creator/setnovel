@@ -2118,6 +2118,35 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db      = firebase.database();
 const storage = firebase.storage();
 
+// ── Firebase 연결 상태 테스트 (디버그용) ──
+function showFirebaseStatus(msg, isError) {
+  const ls = document.getElementById('launchScreen');
+  if (!ls) return;
+  let statusEl = document.getElementById('fbStatus');
+  if (!statusEl) {
+    statusEl = document.createElement('div');
+    statusEl.id = 'fbStatus';
+    statusEl.style.cssText = 'position:absolute;bottom:40px;left:0;right:0;text-align:center;font-size:12px;padding:0 20px;';
+    ls.appendChild(statusEl);
+  }
+  statusEl.style.color = isError ? '#C0392B' : '#8C8580';
+  statusEl.textContent = msg;
+}
+
+db.ref('.info/connected').on('value', snap => {
+  if (snap.val() === true) {
+    showFirebaseStatus('Firebase 연결됨 ✓', false);
+  } else {
+    showFirebaseStatus('Firebase 연결 중...', false);
+  }
+});
+
+setTimeout(() => {
+  db.ref('_ping').set(Date.now())
+    .then(() => showFirebaseStatus('DB 쓰기 성공 ✓', false))
+    .catch(e => showFirebaseStatus('DB 오류: ' + e.message, true));
+}, 1000);
+
 // ── 개발 단계: 로그인 전까지 고정 userId 사용 ──
 // → 인증 연결 시 firebase.auth().currentUser.uid 로 교체
 const USER_ID = 'dev';
