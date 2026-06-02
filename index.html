@@ -262,7 +262,7 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 .confirm-dialog-btn:hover { opacity:0.85; }
 .confirm-dialog-btn.cancel { background:var(--surface2); color:var(--text-primary); }
 .confirm-dialog-btn.danger { background:#FDECEA; color:var(--red); }
-#page-trash { transform:translateX(100%); z-index:3; }
+#page-trash { transform:translateX(100%); z-index:3; position:fixed; inset:0; }
 #page-trash.open { transform:translateX(0); }
 
 .trash-footer {
@@ -1959,7 +1959,6 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 
 </div><!-- /#page-detail -->
 
-</div><!-- /#app -->
 
 <!-- ════════════════════════════════════════
      휴지통 페이지
@@ -2071,6 +2070,9 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
     </button>
   </div>
 </div>
+
+</div><!-- /#app -->
+
 
 <!-- 컨텍스트 팝업 -->
 <div class="menu-context-popup" id="menuContextPopup" onclick="event.stopPropagation()">
