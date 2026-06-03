@@ -432,6 +432,7 @@ body { background:var(--surface); }
 .plot-group-more svg { width:16px; height:16px; fill:currentColor; stroke:none; }
 .plot-part { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); margin:3px 0; box-shadow:var(--shadow); overflow:hidden; }
 .plot-part-header { display:flex; align-items:center; gap:6px; padding:10px 12px 3px 10px; }
+.plot-part-header.collapsed { padding-bottom:10px; }
 .plot-part-toggle { display:flex; align-items:center; justify-content:center; width:20px; height:20px; flex-shrink:0; color:var(--text-secondary); transition:transform 0.2s; cursor:pointer; }
 .plot-part-toggle svg { width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; }
 .plot-part-toggle.expanded { transform:rotate(90deg); }
@@ -1751,7 +1752,7 @@ body { background:var(--surface); }
     <div class="setting-desc-wrap">
       <div class="setting-desc-view" id="settingDescView" onclick="toggleSettingDescExpand()">
         <div class="setting-desc-clamp" id="settingDescClamp">
-          <p class="setting-desc-text placeholder" id="settingDescText">텍스트로 설명 작성</p>
+          <p class="setting-desc-text placeholder" id="settingDescText">길게 눌러 설명 추가...</p>
         </div>
       </div>
       <textarea class="setting-desc-edit" id="settingDescEdit" placeholder="설명 작성..."
@@ -2482,11 +2483,15 @@ function subscribeStoryData(storyId) {
   const unsubSD = ref.settingDesc(storyId).on('value', snap => {
     const val = snap.val();
     if (PROJECT_ID === storyId) {
-      const view = document.getElementById('settingDescView');
-      const ph   = document.getElementById('settingDescPlaceholder');
-      if (view) {
-        view.textContent = val || '';
-        if (ph) ph.style.display = val ? 'none' : '';
+      const textEl = document.getElementById('settingDescText');
+      if (textEl) {
+        if (val) {
+          textEl.textContent = val;
+          textEl.classList.remove('placeholder');
+        } else {
+          textEl.textContent = '길게 눌러 설명 추가...';
+          textEl.classList.add('placeholder');
+        }
       }
     }
   });
@@ -4050,7 +4055,7 @@ function makePlotPartEl(part, groupId) {
 
   // 파트 헤더
   const header = document.createElement('div');
-  header.className = 'plot-part-header';
+  header.className = 'plot-part-header' + (part.expanded ? '' : ' collapsed');
 
   const toggle = document.createElement('div');
   toggle.className = 'plot-part-toggle' + (part.expanded ? ' expanded' : '');
@@ -4121,7 +4126,9 @@ function makePlotPartEl(part, groupId) {
         savePlotData();
       });
     } else if (!partEditing) {
-      part.expanded = !part.expanded; renderPlotList();
+      part.expanded = !part.expanded;
+      header.classList.toggle('collapsed', !part.expanded);
+      renderPlotList();
     }
   });
 
@@ -6890,14 +6897,22 @@ async function onSettingImageSelected(input) {
   document.addEventListener('DOMContentLoaded', () => {
     const wrap = document.getElementById('settingImageWrap');
     if (!wrap) return;
+    let imgStartPos = null;
     wrap.addEventListener('touchstart', e => {
       const img = document.getElementById('settingImageEl');
       if (!img || img.style.display === 'none') return;
-      e.preventDefault(); // iOS 공유/저장 팝업 차단
+      e.preventDefault();
+      imgStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       imgTimer = setTimeout(() => { openSettingImagePopup(e.touches[0].clientX, e.touches[0].clientY); }, 500);
     }, { passive: false });
     wrap.addEventListener('touchend', () => { clearTimeout(imgTimer); imgTimer = null; });
-    wrap.addEventListener('touchmove', () => { clearTimeout(imgTimer); imgTimer = null; });
+    wrap.addEventListener('touchmove', e => {
+      if (imgStartPos) {
+        const dx = e.touches[0].clientX - imgStartPos.x;
+        const dy = e.touches[0].clientY - imgStartPos.y;
+        if (Math.sqrt(dx*dx + dy*dy) > 10) { clearTimeout(imgTimer); imgTimer = null; }
+      }
+    });
     wrap.addEventListener('mousedown', e => {
       const img = document.getElementById('settingImageEl');
       if (!img || img.style.display === 'none') return;
@@ -6939,11 +6954,21 @@ async function settingImageDelete() {
   document.addEventListener('DOMContentLoaded', () => {
     const view = document.getElementById('settingDescView');
     if (!view) return;
+    let descStartPos = null;
     view.addEventListener('touchstart', e => {
-      descTimer = setTimeout(() => { e.preventDefault(); openSettingDescPopup(e.touches[0].clientX, e.touches[0].clientY); }, 500);
+      descStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      descTimer = setTimeout(() => {
+        openSettingDescPopup(e.touches[0].clientX, e.touches[0].clientY);
+      }, 500);
     }, { passive: true });
     view.addEventListener('touchend', () => { clearTimeout(descTimer); descTimer = null; });
-    view.addEventListener('touchmove', () => { clearTimeout(descTimer); descTimer = null; });
+    view.addEventListener('touchmove', e => {
+      if (descStartPos) {
+        const dx = e.touches[0].clientX - descStartPos.x;
+        const dy = e.touches[0].clientY - descStartPos.y;
+        if (Math.sqrt(dx*dx + dy*dy) > 10) { clearTimeout(descTimer); descTimer = null; }
+      }
+    });
     view.addEventListener('mousedown', e => {
       descTimer = setTimeout(() => openSettingDescPopup(e.clientX, e.clientY), 500);
     });
@@ -7534,6 +7559,7 @@ function initMapGestures() {
   let pinchStart = null;
   let longPressTimer = null;
   let longPressTarget = null;
+  let longPressStartPos = null;
 
   body.addEventListener('pointerdown', e => {
     if (e.target.closest('.map-pin') || e.target.closest('#mapAddRegionBtn') || e.target.closest('#mapBgPopup')) return;
@@ -7544,6 +7570,7 @@ function initMapGestures() {
       panStart = { x: e.clientX, y: e.clientY, tx: mapTransform.tx, ty: mapTransform.ty };
       // 롱프레스 → 배경 팝업
       longPressTarget = e.target;
+      longPressStartPos = { x: e.clientX, y: e.clientY };
       longPressTimer = setTimeout(() => {
         longPressTimer = null;
         openMapBgPopup(e.clientX, e.clientY);
@@ -7562,8 +7589,14 @@ function initMapGestures() {
   body.addEventListener('pointermove', e => {
     if (!pointers[e.pointerId]) return;
     pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
-    // 움직임 감지 → 롱프레스 취소
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    // 움직임 감지 → 10px 이상 이동 시에만 롱프레스 취소 (안드로이드 민감도 대응)
+    if (longPressTimer && longPressStartPos) {
+      const dx = e.clientX - longPressStartPos.x;
+      const dy = e.clientY - longPressStartPos.y;
+      if (Math.sqrt(dx*dx + dy*dy) > 10) {
+        clearTimeout(longPressTimer); longPressTimer = null;
+      }
+    }
 
     const keys = Object.keys(pointers);
     if (keys.length === 2 && pinchStart) {
