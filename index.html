@@ -47,8 +47,8 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
   background:var(--bg);
   transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
 }
-/* 상세 페이지: 오른쪽 대기 */
-#page-detail { transform:translateX(100%); z-index:100; }
+/* 상세/휴지통 페이지: fixed로 공유 상단바 위 덮기 */
+#page-detail { transform:translateX(100%); z-index:100; position:fixed; inset:0; }
 /* 상세 열렸을 때 */
 #page-detail.open { transform:translateX(0); }
 
@@ -260,7 +260,7 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 .confirm-dialog-btn:hover { opacity:0.85; }
 .confirm-dialog-btn.cancel { background:var(--surface2); color:var(--text-primary); }
 .confirm-dialog-btn.danger { background:#FDECEA; color:var(--red); }
-#page-trash { transform:translateX(100%); z-index:3; position:fixed; inset:0; }
+#page-trash { transform:translateX(100%); z-index:100; position:fixed; inset:0; }
 #page-trash.open { transform:translateX(0); }
 
 .trash-footer {
@@ -1483,10 +1483,7 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 <body>
 <div id="app">
 
-<!-- 런치 스크린 -->
-<div id="launchScreen" style="position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999;">
-  <span style="font-size:18px; font-weight:700; color:var(--accent-green); letter-spacing:0.02em;">SetNovel</span>
-</div>
+
 
 <!-- ════════════════════════════════════════
      검색 페이지
@@ -2110,10 +2107,8 @@ import { getStorage, ref as storageRef2, uploadBytes, getDownloadURL, deleteObje
 // ════════════════════════════════════════
 //  Firebase 설정
 // ════════════════════════════════════════
-// Firebase 설정 (키 분리 저장)
-const _k = ["AIzaSyAXh1IOy", "WiuGFq-4fSsu4", "b8ZWn7L9mBQzg"].join("");
 const FIREBASE_CONFIG = {
-  apiKey:            _k,
+  apiKey:            ["AIzaSyAXh1IOy","WiuGFq-4fSsu4","b8ZWn7L9mBQzg"].join(""),
   authDomain:        "setnovel-5170c.firebaseapp.com",
   databaseURL:       "https://setnovel-5170c-default-rtdb.firebaseio.com",
   projectId:         "setnovel-5170c",
@@ -2166,54 +2161,7 @@ const storage = {
   }),
 };
 
-// ── 전역 에러 핸들러 (디버그용) ──
-function showDebugError(msg) {
-  let el = document.getElementById('_debugErr');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = '_debugErr';
-    el.style.cssText = 'position:fixed;bottom:80px;left:10px;right:10px;z-index:99999;background:rgba(192,57,43,0.9);color:#fff;font-size:11px;padding:8px 10px;border-radius:8px;word-break:break-all;max-height:120px;overflow-y:auto;';
-    document.body.appendChild(el);
-  }
-  el.textContent += msg + '
-';
-}
-window.onerror = function(msg, src, line, col, err) {
-  showDebugError('L' + line + ': ' + msg);
-  return false;
-};
-window.addEventListener('unhandledrejection', e => {
-  showDebugError('Promise: ' + (e.reason?.message || String(e.reason)));
-});
 
-// ── Firebase 연결 상태 테스트 (디버그용) ──
-function showFirebaseStatus(msg, isError) {
-  const ls = document.getElementById('launchScreen');
-  if (!ls) return;
-  let statusEl = document.getElementById('fbStatus');
-  if (!statusEl) {
-    statusEl = document.createElement('div');
-    statusEl.id = 'fbStatus';
-    statusEl.style.cssText = 'position:absolute;bottom:40px;left:0;right:0;text-align:center;font-size:12px;padding:0 20px;';
-    ls.appendChild(statusEl);
-  }
-  statusEl.style.color = isError ? '#C0392B' : '#8C8580';
-  statusEl.textContent = msg;
-}
-
-db.ref('.info/connected').on('value', snap => {
-  if (snap.val() === true) {
-    showFirebaseStatus('Firebase 연결됨 ✓', false);
-  } else {
-    showFirebaseStatus('Firebase 연결 중...', false);
-  }
-});
-
-setTimeout(() => {
-  db.ref('_ping').set(Date.now())
-    .then(() => showFirebaseStatus('DB 쓰기 성공 ✓', false))
-    .catch(e => showFirebaseStatus('DB 오류: ' + e.message, true));
-}, 1000);
 
 // ── 개발 단계: 로그인 전까지 고정 userId 사용 ──
 // → 인증 연결 시 firebase.auth().currentUser.uid 로 교체
@@ -2320,15 +2268,61 @@ function initDB() {
     const fbData = snap.val();
     if (fbData) {
       MENU_DATA = menuDataFromFirebase(fbData);
+      // 기존 데이터: 이전에 선택된 이야기 자동 선택 (active:true인 것)
+      if (_firstLoad) {
+        let activeStory = null;
+        MENU_DATA.forEach(item => {
+          if (item.type === 'story' && item.active) activeStory = item.id;
+          if (item.type === 'group') item.children.forEach(s => { if (s.active) activeStory = s.id; });
+        });
+        if (activeStory) {
+          setTimeout(() => selectStory(activeStory), 300);
+        } else {
+          setNoStoryMode(true);
+        }
+      }
     } else {
       // 최초 실행: 기본 이야기 생성
       const defaultStoryId = 'story-' + Date.now();
       MENU_DATA = [{
-        id: 'group-default', type: 'group', name: '내 이야기', expanded: true,
+        id: 'group-default', type: 'group', name: '새 그룹', expanded: true,
         children: [{ id: defaultStoryId, type: 'story', name: '새 이야기', active: false }]
       }];
       STORY_META[defaultStoryId] = {};
       saveMenuData();
+      // 최초 실행 시 새 이야기 자동 선택 + 기본 데이터 생성
+      setTimeout(() => {
+        selectStory(defaultStoryId);
+        // 기본 ITEMS (빈 카드 4개)
+        const defaultItems = [
+          { id: 'item-p-' + Date.now(),     type: '인물', name: '새 인물', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
+          { id: 'item-e-' + (Date.now()+1), type: '사건', name: '새 사건', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
+          { id: 'item-s-' + (Date.now()+2), type: '설정', name: '새 설정', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
+          { id: 'item-r-' + (Date.now()+3), type: '지역', name: '새 지역', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
+        ];
+        STORY_DB[defaultStoryId] = defaultItems;
+        ITEMS = defaultItems;
+        const itemsObj = {};
+        defaultItems.forEach((item, i) => { itemsObj[item.id] = { ...item, _order: i }; });
+        ref.items(defaultStoryId).set(itemsObj);
+        // 기본 인물 그룹 (첫 번째 인물 포함)
+        const pId = defaultItems[0].id;
+        PERSON_GROUPS[defaultStoryId] = [
+          { id: 'pgroup-default', name: '새 그룹', expanded: true, personIds: [pId] }
+        ];
+        savePersonGroups();
+        // 기본 플롯 그룹
+        PLOT_DB[defaultStoryId] = [
+          { id: 'pgrp-default', name: '새 그룹', expanded: true, parts: [] }
+        ];
+        savePlotData();
+        // 기본 설정 그룹 (첫 번째 설정 포함)
+        const sId = defaultItems[2].id;
+        SETTING_GROUPS[defaultStoryId] = [
+          { id: 'sgrp-default', name: '새 그룹', expanded: true, cardIds: [sId] }
+        ];
+        saveSettingGroups();
+      }, 500);
     }
     renderMenuList();
     showLoading(false);
@@ -6043,6 +6037,7 @@ function confirmMenuDelete() {
         PROJECT_ID = null;
         ITEMS = [];
         closeDetail();
+        closeMenu();
         setNoStoryMode(true);
       }
     }
@@ -7892,6 +7887,268 @@ function showEraToast(msg) {
 async function loadEraOptions() {
   return getEras().map(e => ({ id: e.name, name: e.name }));
 }
+
+
+// ── window 전역 노출 (type=module 스코프 우회) ──
+Object.assign(window, {
+  addBlock,
+  addImageToBlock,
+  addMenuGroup,
+  addMenuStory,
+  addOrUpdateEra,
+  addPersonGroup,
+  addPlotBlock,
+  addPlotGroup,
+  addPlotPart,
+  addSettingCard,
+  addSettingGroup,
+  addTlEvent,
+  applyGraphTransform,
+  applyMapTransform,
+  attachLongPress,
+  attachPersonLongPress,
+  attachPlotLongPress,
+  attachSettingLongPress,
+  attachTlCardLongPress,
+  attachViewerPinchZoom,
+  autoGrowSettingDesc,
+  buildEditBody,
+  buildReadBlockEl,
+  buildReadBody,
+  buildSingleSelectPopup,
+  clearMultiSelect,
+  clearTlFilter,
+  closeConfirmDeleteDialog,
+  closeContextPopup,
+  closeDeleteSheet,
+  closeDetail,
+  closeEraSheet,
+  closeFilterPopup,
+  closeImageViewer,
+  closeMapBgPopupOutside,
+  closeMenu,
+  closeMenuAddSheet,
+  closeMenuDeleteSheet,
+  closePersonGroupPopup,
+  closePlotGroupPopup,
+  closeRelationSheet,
+  closeSettingDeleteSheet,
+  closeSettingDescPopup,
+  closeSettingGroupPopup,
+  closeSettingImagePopup,
+  closeTlEraPopup,
+  closeTlFilterPopup,
+  closeTrash,
+  closeTrashContextPopup,
+  confirmDelete,
+  confirmMenuDelete,
+  confirmSettingCardDelete,
+  ctxDeleteAction,
+  ctxRenameAction,
+  ctxStoryDetailAction,
+  cycleRelationDir,
+  deleteItem,
+  deleteStorageImage,
+  dropToIndicator,
+  endEditSettingDesc,
+  execConfirmDelete,
+  fbToPart,
+  fbToPlotGroups,
+  findNextPlotInd,
+  getBlockValue,
+  getChosung,
+  getEras,
+  getGraphEdges,
+  getGraphNodes,
+  getMapRegions,
+  getMapSize,
+  getMultiSelectValues,
+  getPeriodSortKey,
+  getPeriodText,
+  getPersonGroups,
+  getPersonName,
+  getPlotEtcParts,
+  getPlotGroups,
+  getRelatedPersonIds,
+  getSettingEtcExpanded,
+  getSettingEtcItems,
+  getSettingGroups,
+  getSettingItems,
+  initDB,
+  initDetail,
+  initDrag,
+  initGraphCanvasGestures,
+  initGraphNode,
+  initMapGestures,
+  injectOptionsToBlock,
+  loadEraOptions,
+  loadSelectOptions,
+  makeCard,
+  makeDropIndicator,
+  makeEditBlock,
+  makeMapPin,
+  makePersonCard,
+  makePersonDropIndicator,
+  makePersonGroupHeader,
+  makePlotBlockEl,
+  makePlotInd,
+  makePlotPartEl,
+  makeSettingCard,
+  makeSettingDropIndicator,
+  makeSettingGroupHeader,
+  makeStoryRow,
+  makeTlDropIndicator,
+  makeTlEventCard,
+  mapAddRegion,
+  mapBgChange,
+  mapBgDelete,
+  mapResetView,
+  menuDataFromFirebase,
+  menuDataToFirebase,
+  onDetailSaved,
+  onDragEnd,
+  onDragMove,
+  onEraSheetOverlayClick,
+  onGraphAddRelation,
+  onGraphNodePointerDown,
+  onGraphNodeTap,
+  onImagesSelected,
+  onMapBgSelected,
+  onMenuDragEnd,
+  onMenuDragMove,
+  onMenuSearch,
+  onPersonDragEnd,
+  onPersonDragMove,
+  onPlotDragEnd,
+  onPlotDragMove,
+  onRelationSheetOverlayClick,
+  onSearch,
+  onSettingDragEnd,
+  onSettingDragMove,
+  onSettingImageSelected,
+  onSettingImageWrapClick,
+  onStoryDetailSaved,
+  onTlCardDragEnd,
+  onTlCardDragMove,
+  onViewerTouchEnd,
+  onViewerTouchStart,
+  openConfirmDeleteDialog,
+  openContextPopup,
+  openDeleteSheet,
+  openDetail,
+  openEraSheet,
+  openImageViewer,
+  openMapBgPopup,
+  openMenu,
+  openMenuAddSheet,
+  openPersonGroupPopup,
+  openPlotGroupPopup,
+  openRelationSheet,
+  openSettingCardDeleteSheet,
+  openSettingDescPopup,
+  openSettingGroupPopup,
+  openSettingImagePopup,
+  openStoryDetail,
+  openTlEraPopup,
+  openTlFilterPopup,
+  openTrash,
+  openTrashContextPopup,
+  partToFb,
+  personGroupAddPerson,
+  personGroupDelete,
+  personGroupRename,
+  plotGroupAddPartAction,
+  plotGroupDeleteAction,
+  plotGroupRenameAction,
+  plotGroupsToFb,
+  populateSelect,
+  positionEdgeLabel,
+  refreshAllEraSelects,
+  relativeTime,
+  removeBlock,
+  removeImageItem,
+  removeTag,
+  renderEraGraph,
+  renderGraphView,
+  renderList,
+  renderMapView,
+  renderMenuList,
+  renderPersonList,
+  renderPlotList,
+  renderRelationColors,
+  renderRelationDir,
+  renderSettingList,
+  renderTimelinePage,
+  renderTlPersonSearchList,
+  renderTrash,
+  resetGraphTransform,
+  restoreBlocks,
+  saveAndRead,
+  saveEraSheet,
+  saveEras,
+  saveItem,
+  saveItemsOrder,
+  saveMenuData,
+  savePersonGroups,
+  savePlotData,
+  saveRelationSheet,
+  saveSettingGroups,
+  selectEraForEdit,
+  selectStory,
+  selectTlEra,
+  serializeBlocks,
+  setMultiSelectValues,
+  setNoStoryMode,
+  setPersonView,
+  setSettingEtcExpanded,
+  setSettingView,
+  setSingleSelectValue,
+  setTab,
+  settingDescDelete,
+  settingDescEdit,
+  settingGroupAddCard,
+  settingGroupDelete,
+  settingGroupRename,
+  settingImageDelete,
+  settingImageReplace,
+  settingMoveCard,
+  settingMoveGroup,
+  showEraToast,
+  showLoading,
+  showScreen,
+  sortTlEvents,
+  startDrag,
+  startEditSettingDesc,
+  startMenuDrag,
+  startPersonDrag,
+  startPlotDrag,
+  startSettingDrag,
+  startTlCardDrag,
+  subscribeStoryData,
+  switchTab,
+  switchToEdit,
+  switchToRead,
+  tagKeyup,
+  toggleBlockMenu,
+  toggleFilterChip,
+  toggleFilterPopup,
+  toggleMultiSelect,
+  toggleMultiSelectItem,
+  toggleSettingDescExpand,
+  toggleSingleSelect,
+  toggleSortChip,
+  toggleTlFilterPerson,
+  trashCtxDelete,
+  trashCtxRestore,
+  trashItem,
+  triggerSettingImagePick,
+  trimLineToNodes,
+  updateFilterBtnState,
+  updateGraphEdges,
+  updateMultiSelectBtn,
+  updateViewerPosition,
+  uploadImage
+});
 
 // ── renderList는 initDB의 실시간 리스너가 호출함 ──
 initDB();
