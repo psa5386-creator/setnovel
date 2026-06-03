@@ -1483,13 +1483,16 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 <body>
 <div id="app">
 
-
+<!-- 런치 스크린 -->
+<div id="launchScreen" style="position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:9999;">
+  <span style="font-size:18px; font-weight:700; color:var(--accent-green); letter-spacing:0.02em;">SetNovel</span>
+</div>
 
 <!-- ════════════════════════════════════════
      검색 페이지
 ════════════════════════════════════════ -->
 <!-- 공유 상단바 -->
-<div class="top-bar" id="sharedTopBar">
+<div class="top-bar" id="sharedTopBar" style="position:relative; z-index:30;">
   <div class="top-bar-back" onclick="openMenu()">
     <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
   </div>
@@ -1538,19 +1541,18 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 </div>
 
 <!-- 탭 콘텐츠 슬라이드 영역 -->
-<!-- 선택된 이야기 없음 오버레이 - 탭 전체 덮음 -->
-<div id="noStoryOverlay" style="display:none; position:absolute; left:0; right:0; top:0; bottom:0; background:var(--bg); z-index:20; flex-direction:column; align-items:center; justify-content:center; gap:14px;">
-  <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--border)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="16" y1="13" x2="8" y2="13"/>
-    <line x1="16" y1="17" x2="8" y2="17"/>
-    <polyline points="10 9 9 9 8 9"/>
-  </svg>
-  <p style="font-size:14px; color:var(--text-secondary);">이야기를 선택하세요.</p>
-</div>
-
 <div id="tabContentWrap" style="flex:1; min-height:0; position:relative; overflow:hidden;">
+  <!-- 선택된 이야기 없음 오버레이 -->
+  <div id="noStoryOverlay" style="display:none; position:absolute; inset:0; background:var(--bg); z-index:20; flex-direction:column; align-items:center; justify-content:center; gap:14px;">
+    <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="var(--border)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+    <p style="font-size:14px; color:var(--text-secondary);">이야기를 선택하세요.</p>
+  </div>
 
   <!-- 검색 콘텐츠 -->
   <div id="content-search" style="position:absolute; inset:0; display:flex; flex-direction:column; background:var(--bg); transform:translateX(0); transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);">
@@ -2224,12 +2226,12 @@ function menuDataToFirebase(data) {
   data.forEach((item, i) => {
     const key = item.id;
     obj[key] = { ...item, _order: i };
-    if (item.type === 'group' && item.children) {
+    if (item.type === 'group') {
       const children = {};
-      item.children.forEach((c, ci) => {
+      (item.children || []).forEach((c, ci) => {
         children[c.id] = { ...c, _order: ci };
       });
-      obj[key].children = children;
+      obj[key].children = Object.keys(children).length ? children : null;
     }
   });
   return obj;
@@ -2243,10 +2245,12 @@ function menuDataFromFirebase(fbObj) {
     .map(item => {
       const out = { ...item };
       delete out._order;
-      if (item.type === 'group' && item.children) {
-        out.children = Object.values(item.children)
-          .sort((a, b) => (a._order || 0) - (b._order || 0))
-          .map(c => { const cc = { ...c }; delete cc._order; return cc; });
+      if (item.type === 'group') {
+        out.children = item.children
+          ? Object.values(item.children)
+              .sort((a, b) => (a._order || 0) - (b._order || 0))
+              .map(c => { const cc = { ...c }; delete cc._order; return cc; })
+          : [];
       }
       return out;
     });
@@ -2263,21 +2267,34 @@ function initDB() {
     const fbData = snap.val();
     if (fbData) {
       MENU_DATA = menuDataFromFirebase(fbData);
-      // 기존 데이터: 이전에 선택된 이야기 자동 선택 (active:true인 것)
+      // 첫 로드 시에만 이야기 자동 선택
       if (_firstLoad) {
+        _firstLoad = false;
         let activeStory = null;
         MENU_DATA.forEach(item => {
           if (item.type === 'story' && item.active) activeStory = item.id;
           if (item.type === 'group') item.children.forEach(s => { if (s.active) activeStory = s.id; });
         });
         if (activeStory) {
-          setTimeout(() => selectStory(activeStory), 300);
+          selectStory(activeStory);
         } else {
-          setNoStoryMode(true);
+          let firstStory = null;
+          MENU_DATA.forEach(item => {
+            if (!firstStory && item.type === 'story') firstStory = item.id;
+            if (!firstStory && item.type === 'group' && item.children.length)
+              firstStory = item.children[0].id;
+          });
+          if (firstStory) {
+            selectStory(firstStory);
+          } else {
+            setNoStoryMode(true);
+          }
         }
       }
     } else {
-      // 최초 실행: 기본 이야기 생성
+      // 최초 실행: 기본 이야기 생성 (DB에 데이터 없을 때만)
+      if (!_firstLoad) return; // 이미 처리됨
+      _firstLoad = false;
       const defaultStoryId = 'story-' + Date.now();
       MENU_DATA = [{
         id: 'group-default', type: 'group', name: '새 그룹', expanded: true,
@@ -2286,38 +2303,41 @@ function initDB() {
       STORY_META[defaultStoryId] = {};
       saveMenuData();
       // 최초 실행 시 새 이야기 자동 선택 + 기본 데이터 생성
-      setTimeout(() => {
-        selectStory(defaultStoryId);
-        // 기본 ITEMS (빈 카드 4개)
-        const defaultItems = [
-          { id: 'item-p-' + Date.now(),     type: '인물', name: '새 인물', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
-          { id: 'item-e-' + (Date.now()+1), type: '사건', name: '새 사건', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
-          { id: 'item-s-' + (Date.now()+2), type: '설정', name: '새 설정', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
-          { id: 'item-r-' + (Date.now()+3), type: '지역', name: '새 지역', desc: '', blocks: { blocks: [] }, updatedAt: Date.now() },
-        ];
-        STORY_DB[defaultStoryId] = defaultItems;
-        ITEMS = defaultItems;
-        const itemsObj = {};
-        defaultItems.forEach((item, i) => { itemsObj[item.id] = { ...item, _order: i }; });
-        ref.items(defaultStoryId).set(itemsObj);
-        // 기본 인물 그룹 (첫 번째 인물 포함)
-        const pId = defaultItems[0].id;
-        PERSON_GROUPS[defaultStoryId] = [
-          { id: 'pgroup-default', name: '새 그룹', expanded: true, personIds: [pId] }
-        ];
-        savePersonGroups();
-        // 기본 플롯 그룹
-        PLOT_DB[defaultStoryId] = [
-          { id: 'pgrp-default', name: '새 그룹', expanded: true, parts: [] }
-        ];
-        savePlotData();
-        // 기본 설정 그룹 (첫 번째 설정 포함)
-        const sId = defaultItems[2].id;
-        SETTING_GROUPS[defaultStoryId] = [
-          { id: 'sgrp-default', name: '새 그룹', expanded: true, cardIds: [sId] }
-        ];
-        saveSettingGroups();
-      }, 500);
+      selectStory(defaultStoryId);
+      // 기본 ITEMS (빈 카드 4개)
+      const now = Date.now();
+      const defaultItems = [
+        { id: 'item-p-' + now,     type: '인물', name: '', desc: '', blocks: { blocks: [] }, updatedAt: now },
+        { id: 'item-e-' + (now+1), type: '사건', name: '', desc: '', blocks: { blocks: [] }, updatedAt: now },
+        { id: 'item-s-' + (now+2), type: '설정', name: '', desc: '', blocks: { blocks: [] }, updatedAt: now },
+        { id: 'item-r-' + (now+3), type: '지역', name: '', desc: '', blocks: { blocks: [] }, updatedAt: now },
+      ];
+      STORY_DB[defaultStoryId] = defaultItems;
+      ITEMS = defaultItems;
+      const itemsObj = {};
+      defaultItems.forEach((item, i) => { itemsObj[item.id] = { ...item, _order: i }; });
+      ref.items(defaultStoryId).set(itemsObj);
+      // 기본 인물 그룹
+      const pId = defaultItems[0].id;
+      PERSON_GROUPS[defaultStoryId] = [
+        { id: 'pgroup-default', name: '새 그룹', expanded: true, personIds: [pId] }
+      ];
+      savePersonGroups();
+      // 기본 플롯 그룹 (파트+내용블록 세트)
+      PLOT_DB[defaultStoryId] = [
+        { id: 'pgrp-default', name: '새 그룹', expanded: true, parts: [
+          { id: 'part-default', title: '새 파트', expanded: true, blocks: [
+            { id: 'block-default', content: '', expanded: true }
+          ]}
+        ]}
+      ];
+      savePlotData();
+      // 기본 설정 그룹
+      const sId = defaultItems[2].id;
+      SETTING_GROUPS[defaultStoryId] = [
+        { id: 'sgrp-default', name: '새 그룹', expanded: true, cardIds: [sId] }
+      ];
+      saveSettingGroups();
     }
     renderMenuList();
     showLoading(false);
@@ -5862,6 +5882,8 @@ function selectStory(id) {
   closeMenu();
 
   renderMenuList();
+  // active 상태 저장 → 다음에 열 때 마지막 이야기 자동 선택
+  saveMenuData();
 }
 
 // + 버튼 바텀시트
@@ -8148,6 +8170,14 @@ Object.assign(window, {
 // ── renderList는 initDB의 실시간 리스너가 호출함 ──
 initDB();
 
+// 런치 스크린 폴백 (5초 후 강제 제거)
+setTimeout(() => {
+  const ls = document.getElementById('launchScreen');
+  if (!ls) return;
+  ls.style.opacity = '0';
+  setTimeout(() => ls.remove(), 400);
+}, 2000);
+
 // 런치 스크린 폴백 (Firebase 응답 없을 때 대비, 5초 후 강제 제거)
 setTimeout(() => {
   const ls = document.getElementById('launchScreen');
@@ -8155,7 +8185,7 @@ setTimeout(() => {
   ls.style.transition = 'opacity 0.4s';
   ls.style.opacity = '0';
   setTimeout(() => ls.remove(), 400);
-}, 5000);
+}, 2000);
 </script>
 </body>
 </html>
