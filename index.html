@@ -71,7 +71,7 @@ html, body { height:100%; overflow:hidden; background:var(--bg); font-family:'No
 .spacer { width:36px; }
 
 /* 하단 탭바 */
-.bottom-bar { flex-shrink:0; background:var(--surface); border-top:1px solid var(--border); padding:10px 15px; padding-bottom:max(10px, calc(10px + env(safe-area-inset-bottom, 0px))); display:flex; justify-content:space-around; align-items:center; }
+.bottom-bar { flex-shrink:0; background:var(--surface); border-top:1px solid var(--border); padding:10px 15px; padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px)); display:flex; justify-content:space-around; align-items:center; }
 .tab-item { display:flex; flex-direction:column; align-items:center; cursor:pointer; padding:7px 14px; border-radius:var(--radius-sm); transition:all 0.2s; min-width:56px; }
 .tab-item:hover { background:var(--surface2); }
 .tab-icon { width:26px; height:26px; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; }
