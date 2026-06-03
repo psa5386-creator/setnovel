@@ -4,6 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="data:application/json;charset=utf-8,{
+  &quot;name&quot;: &quot;SetNovel&quot;,
+  &quot;short_name&quot;: &quot;SetNovel&quot;,
+  &quot;description&quot;: &quot;소설 설정 관리 앱&quot;,
+  &quot;start_url&quot;: &quot;.&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;background_color&quot;: &quot;#F7F5F2&quot;,
+  &quot;theme_color&quot;: &quot;#FFFFFF&quot;,
+  &quot;orientation&quot;: &quot;portrait&quot;,
+  &quot;icons&quot;: [
+    { &quot;src&quot;: &quot;icon-192.png&quot;, &quot;sizes&quot;: &quot;192x192&quot;, &quot;type&quot;: &quot;image/png&quot; },
+    { &quot;src&quot;: &quot;icon-512.png&quot;, &quot;sizes&quot;: &quot;512x512&quot;, &quot;type&quot;: &quot;image/png&quot; }
+  ]
+}">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#FFFFFF">
 <title>SetNovel</title>
@@ -8167,6 +8181,11 @@ Object.assign(window, {
   updateViewerPosition,
   uploadImage
 });
+
+// ── Service Worker 등록 (PWA 설치 지원) ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/setnovel/sw.js').catch(() => {});
+}
 
 // ── renderList는 initDB의 실시간 리스너가 호출함 ──
 initDB();
