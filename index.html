@@ -2220,7 +2220,7 @@ body { background:var(--surface); }
 import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref as dbRef, set, update, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as storageRef2, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 // ════════════════════════════════════════
 //  Firebase 설정
@@ -2285,6 +2285,7 @@ const ALLOWED_EMAIL = 'psa5386@gmail.com';
 let USER_ID = null;
 const _auth = getAuth(_fbApp);
 const _googleProvider = new GoogleAuthProvider();
+setPersistence(_auth, browserLocalPersistence).catch(() => {});
 
 // ── DB 경로 헬퍼 ──
 const ref = {
@@ -8661,7 +8662,15 @@ function hideLoginScreen() {
 function signInWithGoogle() {
   const errEl = document.getElementById('loginError');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-  // iOS Safari: 사용자 탭 이벤트 내에서 직접 호출 (async 없이)
+  // iOS Safari는 팝업 미지원 → redirect 우선
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  if (isIOS || isSafari) {
+    signInWithRedirect(_auth, _googleProvider).catch(e => {
+      if (errEl) { errEl.textContent = '오류: ' + e.code; errEl.style.display = 'block'; }
+    });
+    return;
+  }
   signInWithPopup(_auth, _googleProvider)
     .then(() => { /* onAuthStateChanged가 처리 */ })
     .catch(e => {
