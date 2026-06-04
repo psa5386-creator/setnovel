@@ -8689,6 +8689,10 @@ function handleSignOut() {
   signOut(_auth);
 }
 
+// ES module → 전역 노출
+window.signInWithGoogle = signInWithGoogle;
+window.handleSignOut = handleSignOut;
+
 // redirect 결과 처리 (페이지 로드 시)
 getRedirectResult(_auth).then(result => {
   // 결과 있으면 onAuthStateChanged가 처리함
