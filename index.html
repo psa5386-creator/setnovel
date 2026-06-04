@@ -2142,6 +2142,8 @@ const ref = {
   mapBgUrl:      (sid) => db.ref(`users/${USER_ID}/stories/${sid}/mapBgUrl`),
   settingImage:  (sid) => db.ref(`users/${USER_ID}/stories/${sid}/settingImageUrl`),
   settingDesc:   (sid) => db.ref(`users/${USER_ID}/stories/${sid}/settingDesc`),
+  edges:         (sid) => db.ref(`users/${USER_ID}/stories/${sid}/edges`),
+  mapPins:       (sid) => db.ref(`users/${USER_ID}/stories/${sid}/mapPins`),
 };
 
 // ── Storage 경로 헬퍼 ──
@@ -2456,6 +2458,30 @@ function subscribeStoryData(storyId) {
     }
   });
   _storyDataUnsubscribes[storyId].push(() => ref.settingDesc(storyId).off('value', unsubSD));
+
+  // edges 실시간 구독
+  const unsubEdges = ref.edges(storyId).on('value', snap => {
+    const fbEdges = snap.val();
+    if (fbEdges) {
+      GRAPH_EDGES[storyId] = Object.values(fbEdges);
+    } else {
+      GRAPH_EDGES[storyId] = [];
+    }
+    if (PROJECT_ID === storyId) renderGraphView();
+  });
+  _storyDataUnsubscribes[storyId].push(() => ref.edges(storyId).off('value', unsubEdges));
+
+  // mapPins (지역 핀 위치) 실시간 구독
+  const unsubMapPins = ref.mapPins(storyId).on('value', snap => {
+    const fbPins = snap.val();
+    if (fbPins && STORY_DB[storyId]) {
+      STORY_DB[storyId].forEach(item => {
+        if (fbPins[item.id]) item.mapPos = fbPins[item.id];
+      });
+    }
+    if (PROJECT_ID === storyId) renderMapView();
+  });
+  _storyDataUnsubscribes[storyId].push(() => ref.mapPins(storyId).off('value', unsubMapPins));
 }
 
 // ── 플롯 Firebase 직렬화/역직렬화 ──
@@ -3148,6 +3174,14 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
   function onUp() {
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
+    if (moved && PROJECT_ID) {
+      // 노드 위치 Firebase 저장
+      const movedItem = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
+      if (movedItem) {
+        const order = (STORY_DB[PROJECT_ID] || []).findIndex(i => i.id === personId);
+        ref.item(PROJECT_ID, personId).set({ ...movedItem, _order: order });
+      }
+    }
     if (!moved) onGraphNodeTap(personId);
   }
   canvas.addEventListener('pointermove', onMove);
@@ -3229,6 +3263,12 @@ function saveRelationSheet() {
     if (edge) { edge.label = label; edge.dir = dir; edge.color = color; }
   } else {
     edges.push({ id: 'edge-' + Date.now(), from: fromId, to: toId, label, dir, color });
+  }
+  // Firebase 저장
+  if (PROJECT_ID) {
+    const edgesObj = {};
+    edges.forEach(e => { edgesObj[e.id] = e; });
+    ref.edges(PROJECT_ID).set(edgesObj);
   }
   closeRelationSheet();
 }
@@ -7669,6 +7709,10 @@ function makeMapPin(item) {
     const onUp = () => {
       body2.removeEventListener('pointermove', onMove);
       body2.removeEventListener('pointerup', onUp);
+      if (dragMoved && PROJECT_ID) {
+        // 핀 위치 Firebase 저장
+        ref.mapPins(PROJECT_ID).child(item.id).set(item.mapPos);
+      }
       if (!dragMoved) openDetail(item);
     };
     body2.addEventListener('pointermove', onMove);
@@ -7685,6 +7729,10 @@ function mapAddRegion() {
   newItem.mapPos = { rx: 0.5, ry: 0.5 };
   ITEMS.push(newItem);
   STORY_DB[PROJECT_ID] = ITEMS;
+  // Firebase 저장
+  const order = ITEMS.length - 1;
+  ref.item(PROJECT_ID, newId).set({ ...newItem, _order: order });
+  ref.mapPins(PROJECT_ID).child(newId).set(newItem.mapPos);
   renderSettingList();
   const q = document.querySelector('.search-input-box input');
   if (q) onSearch(q.value);
