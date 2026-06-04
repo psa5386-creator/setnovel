@@ -8735,7 +8735,10 @@ function hideLoginScreen() {
 function signInWithGoogle() {
   const errEl = document.getElementById('loginError');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  const btn = document.querySelector('#launchScreen button');
+  if (btn) btn.style.display = 'none';
   signInWithPopup(_auth, _googleProvider).catch(e => {
+    if (btn) btn.style.display = 'flex';
     if (errEl) { errEl.textContent = '로그인 실패. 다시 시도해주세요.'; errEl.style.display = 'block'; }
   });
 }
