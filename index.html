@@ -8669,15 +8669,14 @@ if ('serviceWorker' in navigator) {
 function showLoginScreen() {
   const ls = document.getElementById('loginScreen');
   if (ls) ls.style.display = 'flex';
-  const app = document.getElementById('app');
-  if (app) app.style.visibility = 'hidden';
+  // 런치스크린 제거
+  const launch = document.getElementById('launchScreen');
+  if (launch) { launch.style.opacity = '0'; setTimeout(() => launch.remove(), 400); }
 }
 
 function hideLoginScreen() {
   const ls = document.getElementById('loginScreen');
   if (ls) ls.style.display = 'none';
-  const app = document.getElementById('app');
-  if (app) app.style.visibility = 'visible';
 }
 
 async function signInWithGoogle() {
