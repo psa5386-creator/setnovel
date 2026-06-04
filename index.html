@@ -7265,8 +7265,9 @@ function openTlFilterPopup(e) {
   }
   const rect = btn.getBoundingClientRect();
   popup.style.top  = (rect.bottom + 4) + 'px';
-  popup.style.right = (window.innerWidth - rect.right) + 'px';
-  popup.style.left = 'auto';
+  popup.style.right = 'auto';
+  const leftPos = Math.min(rect.left, window.innerWidth - 158);
+  popup.style.left = Math.max(0, leftPos) + 'px';
   popup.classList.add('open');
   const input = document.getElementById('tlPersonSearchInput');
   input.value = '';
