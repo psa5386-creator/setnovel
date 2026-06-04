@@ -2194,7 +2194,7 @@ body { background:var(--surface); }
 <div class="confirm-dialog-overlay" id="confirmDeleteDialog">
   <div class="confirm-dialog">
     <div class="confirm-dialog-title" id="confirmDeleteTitle">선택한 항목을 삭제하시겠습니까?</div>
-    <div class="confirm-dialog-desc">삭제된 항목은 복구할 수 없습니다.</div>
+    <div class="confirm-dialog-desc" id="confirmDeleteDesc">삭제된 항목은 복구할 수 없습니다.</div>
     <div class="confirm-dialog-btns">
       <button class="confirm-dialog-btn cancel" onclick="closeConfirmDeleteDialog()">취소</button>
       <button class="confirm-dialog-btn danger" id="confirmDeleteConfirmBtn" onclick="execConfirmDelete()">삭제</button>
@@ -5586,7 +5586,8 @@ function doLogout() {
   openConfirmDeleteDialog(
     '로그아웃 하시겠습니까?',
     () => { signOut(_auth).then(() => { showLoginScreen(); }); },
-    '로그아웃'
+    '로그아웃',
+    ''
   );
 }
 // 앱 시작 시 테마 복원
@@ -6564,10 +6565,10 @@ function confirmMenuDelete() {
 let permDeleteId = null;
 let confirmDeleteCallback = null; // 플롯 등에서 쓸 콜백
 
-function openConfirmDeleteDialog(title, callback, confirmLabel) {
+function openConfirmDeleteDialog(title, callback, confirmLabel, desc) {
   permDeleteId = trashCtxId;
-  if (title) document.getElementById('confirmDeleteTitle').textContent = title;
-  else document.getElementById('confirmDeleteTitle').textContent = '선택한 항목을 삭제하시겠습니까?';
+  document.getElementById('confirmDeleteTitle').textContent = title || '선택한 항목을 삭제하시겠습니까?';
+  document.getElementById('confirmDeleteDesc').textContent = desc !== undefined ? desc : '삭제된 항목은 복구할 수 없습니다.';
   document.getElementById('confirmDeleteConfirmBtn').textContent = confirmLabel || '삭제';
   confirmDeleteCallback = callback || null;
   document.getElementById('confirmDeleteDialog').classList.add('open');
@@ -8716,9 +8717,7 @@ if ('serviceWorker' in navigator) {
 
 // ── Auth 초기화 ──
 function showLoginScreen() {
-  // 런치스크린에 로그인 버튼이 있으므로 런치스크린 유지
-  const launch = document.getElementById('launchScreen');
-  if (launch) launch.style.display = 'flex';
+  location.reload();
 }
 
 function hideLoginScreen() {
