@@ -8662,13 +8662,18 @@ async function signInWithGoogle() {
   const errEl = document.getElementById('loginError');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
   try {
-    // iOS Safari는 popup 지원이 불안정해서 redirect 우선
-    await signInWithRedirect(_auth, _googleProvider);
+    await signInWithPopup(_auth, _googleProvider);
   } catch(e) {
-    try {
-      await signInWithPopup(_auth, _googleProvider);
-    } catch(e2) {
-      if (errEl) { errEl.textContent = '로그인 중 오류가 발생했습니다.'; errEl.style.display = 'block'; }
+    console.error('popup error:', e.code, e.message);
+    if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+      // 팝업 안 되면 redirect
+      try {
+        await signInWithRedirect(_auth, _googleProvider);
+      } catch(e2) {
+        if (errEl) { errEl.textContent = '로그인 중 오류가 발생했습니다.\n(' + e2.code + ')'; errEl.style.display = 'block'; }
+      }
+    } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      if (errEl) { errEl.textContent = '로그인 중 오류가 발생했습니다.\n(' + e.code + ')'; errEl.style.display = 'block'; }
     }
   }
 }
