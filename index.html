@@ -80,6 +80,7 @@ body { background:var(--surface); }
 /* 상단바 */
 .top-bar { flex-shrink:0; background:var(--surface); padding:10px 15px; padding-top:calc(10px + env(safe-area-inset-top,0px)); min-height:calc(53px + env(safe-area-inset-top,0px)); display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); position:relative; z-index:10; }
 .top-bar-title { font-size:16px; font-weight:700; color:var(--accent-green); letter-spacing:-0.01em; position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap; pointer-events:none; }
+.top-bar-title-story { font-size:18px; font-weight:500; }
 .top-bar-back { display:flex; align-items:center; cursor:pointer; padding:7px; border-radius:8px; z-index:1; }
 .top-bar-back svg { width:18px; height:18px; stroke:currentColor; fill:none; }
 .top-bar-action { font-size:14px; font-weight:600; color:var(--text-primary); background:none; border:none; cursor:pointer; font-family:inherit; padding:7px 0; line-height:1; z-index:1; }
@@ -143,7 +144,7 @@ body { background:var(--surface); }
   border-bottom:1px solid var(--border);
 }
 .menu-logo {
-  font-size:16px; font-weight:700;
+  font-size:18px; font-weight:500;
   color:var(--accent-green); letter-spacing:-0.01em;
 }
 .menu-close {
@@ -1581,7 +1582,7 @@ body { background:var(--surface); }
   <div class="top-bar-back" onclick="openMenu()">
     <svg viewBox="0 0 256 256"><line x1="20" y1="56" x2="236" y2="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/><line x1="20" y1="128" x2="236" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/><line x1="20" y1="200" x2="236" y2="200" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/></svg>
   </div>
-  <span class="top-bar-title" id="sharedTopBarTitle">새 이야기</span>
+  <span class="top-bar-title top-bar-title-story" id="sharedTopBarTitle">새 이야기</span>
   <!-- 검색 탭 우측 (기본 숨김) -->
   <button class="top-bar-action" id="topBarSearchAction" style="visibility:hidden;">메뉴</button>
   <div id="topBarHomeAction" style="display:none; align-items:center;">
