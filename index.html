@@ -3031,9 +3031,9 @@ function switchTab(tab) {
   // 상단바 타이틀 설정
   const titleEl = document.getElementById('sharedTopBarTitle');
   if (tab === 'home') {
-    if (titleEl) titleEl.textContent = 'setnovel';
+    if (titleEl) { titleEl.textContent = 'setnovel'; titleEl.classList.add('top-bar-title-story'); }
   } else {
-    if (titleEl && currentStoryName) titleEl.textContent = currentStoryName;
+    if (titleEl) { titleEl.classList.remove('top-bar-title-story'); if (currentStoryName) titleEl.textContent = currentStoryName; }
   }
 
   // 홈 탭일 때 하단바 숨기기
