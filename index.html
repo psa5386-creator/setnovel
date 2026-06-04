@@ -2220,7 +2220,7 @@ body { background:var(--surface); }
 import { initializeApp }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref as dbRef, set, update, remove, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as storageRef2, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 // ════════════════════════════════════════
 //  Firebase 설정
@@ -8662,27 +8662,9 @@ function hideLoginScreen() {
 function signInWithGoogle() {
   const errEl = document.getElementById('loginError');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-  // iOS Safari는 팝업 미지원 → redirect 우선
-  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  if (isIOS || isSafari) {
-    signInWithRedirect(_auth, _googleProvider).catch(e => {
-      if (errEl) { errEl.textContent = '오류: ' + e.code; errEl.style.display = 'block'; }
-    });
-    return;
-  }
-  signInWithPopup(_auth, _googleProvider)
-    .then(() => { /* onAuthStateChanged가 처리 */ })
-    .catch(e => {
-      console.error('popup error:', e.code, e.message);
-      if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
-        signInWithRedirect(_auth, _googleProvider).catch(e2 => {
-          if (errEl) { errEl.textContent = '오류: ' + e2.code; errEl.style.display = 'block'; }
-        });
-      } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
-        if (errEl) { errEl.textContent = '오류: ' + e.code; errEl.style.display = 'block'; }
-      }
-    });
+  signInWithPopup(_auth, _googleProvider).catch(e => {
+    if (errEl) { errEl.textContent = '로그인 실패. 다시 시도해주세요.'; errEl.style.display = 'block'; }
+  });
 }
 
 function handleSignOut() {
@@ -8693,15 +8675,7 @@ function handleSignOut() {
 window.signInWithGoogle = signInWithGoogle;
 window.handleSignOut = handleSignOut;
 
-// redirect 결과 처리 (페이지 로드 시)
-getRedirectResult(_auth).then(result => {
-  // 결과 있으면 onAuthStateChanged가 처리함
-}).catch(e => {
-  if (e.code !== 'auth/no-current-user') {
-    const errEl = document.getElementById('loginError');
-    if (errEl) { errEl.textContent = '로그인 중 오류가 발생했습니다.'; errEl.style.display = 'block'; }
-  }
-});
+
 
 // Auth 상태 감지 → 허용된 이메일만 진입
 onAuthStateChanged(_auth, user => {
