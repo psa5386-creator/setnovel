@@ -1568,7 +1568,8 @@ body { background:var(--surface); }
     <svg viewBox="0 0 256 256"><line x1="20" y1="56" x2="236" y2="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/><line x1="20" y1="128" x2="236" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/><line x1="20" y1="200" x2="236" y2="200" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/></svg>
   </div>
   <span class="top-bar-title" id="sharedTopBarTitle">새 이야기</span>
-  <!-- 홈 탭 우측 앱 아이콘 -->
+  <!-- 검색 탭 우측 (기본 숨김) -->
+  <button class="top-bar-action" id="topBarSearchAction" style="visibility:hidden;">메뉴</button>
   <div id="topBarHomeAction" style="display:none; align-items:center;">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="26" height="26" style="flex-shrink:0;">
   <defs>
@@ -1614,8 +1615,6 @@ body { background:var(--surface); }
   <path d="M69.9,107.78s-10.32,0-10.32,0c-6.23.15-12.6,1.65-14.11,6.12-1.41,4.5,2.87,9.45,7.82,13.24l8.35,6.06s-3.19,9.81-3.19,9.81c-1.78,5.97-2.33,12.49,1.46,15.31,3.84,2.73,9.88.19,15.01-3.34l8.35-6.06s8.35,6.06,8.35,6.06c5.13,3.54,11.16,6.07,15.01,3.34,3.79-2.81,3.24-9.33,1.46-15.31l-3.19-9.81,8.35-6.06c4.95-3.79,9.23-8.74,7.82-13.24-1.5-4.47-7.88-5.96-14.11-6.12,0,0-10.32,0-10.32,0l-3.19-9.81c-2.07-5.88-5.46-11.48-10.18-11.53-4.72.05-8.11,5.65-10.18,11.53,0,0-3.19,9.81-3.19,9.81Z" fill="#779b7d"/>
 </svg>
   </div>
-  <!-- 검색 탭 우측 (기본 숨김) -->
-  <button class="top-bar-action" id="topBarSearchAction" style="visibility:hidden;">메뉴</button>
   <!-- 설정 탭 우측: 뷰 전환 버튼 -->
   <div id="topBarSettingAction" style="display:none; align-items:center; gap:2px;">
     <button class="view-toggle-btn active" id="settingListViewBtn" onclick="setSettingView('list')" title="리스트뷰">
