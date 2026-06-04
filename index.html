@@ -8717,7 +8717,11 @@ if ('serviceWorker' in navigator) {
 
 // ── Auth 초기화 ──
 function showLoginScreen() {
-  location.reload();
+  if (_homeInitDone) {
+    // 앱이 이미 초기화된 상태(로그아웃) → 새로고침으로 런치스크린 복원
+    location.reload();
+  }
+  // 초기 로딩 중엔 onAuthStateChanged가 로그인 버튼 표시 처리하므로 아무것도 안 함
 }
 
 function hideLoginScreen() {
@@ -8769,12 +8773,20 @@ onAuthStateChanged(_auth, user => {
         errEl.textContent = '접근이 허용되지 않은 계정입니다.\n(' + user.email + ')';
         errEl.style.display = 'block';
       }
-      showLoginScreen();
+      const btn = document.querySelector('#launchScreen button');
+      if (btn) btn.style.display = 'flex';
     }
   } else {
     // 로그아웃 상태 → 로그인 화면
     USER_ID = null;
-    showLoginScreen();
+    if (_homeInitDone) {
+      // 앱 사용 중 로그아웃 → 새로고침
+      location.reload();
+    } else {
+      // 초기 로딩 시 미로그인 → 런치스크린 로그인 버튼 표시
+      const btn = document.querySelector('#launchScreen button');
+      if (btn) btn.style.display = 'flex';
+    }
   }
 });
 
