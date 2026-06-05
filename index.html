@@ -3419,10 +3419,13 @@ function renderGraphView() {
         bestMy = my + ny * R;
       }
     }
-    // 수직(|angle|>45)이면 무조건 -90, 수평이면 읽기 편한 방향
-    if (bestAngle > 90) bestAngle -= 180;
-    if (bestAngle < -90) bestAngle += 180;
+    // 수직(|angle|>45)이면 무조건 -90 (화면 기준 반시계)
+    // atan2 범위 -180~180 정규화
+    while (bestAngle > 180) bestAngle -= 360;
+    while (bestAngle < -180) bestAngle += 360;
     if (Math.abs(bestAngle) > 45) bestAngle = -90;
+    else if (bestAngle > 90) bestAngle -= 180;
+    else if (bestAngle < -90) bestAngle += 180;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
@@ -3842,8 +3845,8 @@ function renderGroupPreview() {
   const R = 34, PAD = 54;
   const NS = 'http://www.w3.org/2000/svg';
 
-  // 노드 위치 — 좌우 넓게
-  const pts = [{x: 65, y: 80}, {x: 235, y: 80}];
+  // 노드 위치 — 관계도와 동일 크기(64px), 좌우 배치
+  const pts = [{x: 75, y: 90}, {x: 225, y: 90}];
 
   // 바운더리 선
   const pathD = offsetHullPath(pts, PAD);
@@ -3874,11 +3877,11 @@ function renderGroupPreview() {
     svg.appendChild(circle);
 
     // 인물 아이콘 — viewBox 256×256 기준으로 R*2 크기에 맞게
-    const iconSize = R * 2;
+    const iconSize = 64; // 관계도 노드와 동일
     const iconG = document.createElementNS(NS, 'g');
     iconG.setAttribute('clip-path', 'url(#' + clipId + ')');
     const iconSvg = document.createElementNS(NS, 'svg');
-    iconSvg.setAttribute('x', p.x - R); iconSvg.setAttribute('y', p.y - R);
+    iconSvg.setAttribute('x', p.x - 32); iconSvg.setAttribute('y', p.y - 32);
     iconSvg.setAttribute('width', iconSize); iconSvg.setAttribute('height', iconSize);
     iconSvg.setAttribute('viewBox', '0 0 256 256');
     const iconPath = document.createElementNS(NS, 'path');
@@ -3893,8 +3896,8 @@ function renderGroupPreview() {
   const lblX = (pts[0].x + pts[1].x) / 2;
   const lblY = pts[0].y - PAD;
   const fo = document.createElementNS(NS, 'foreignObject');
-  fo.setAttribute('x', String(lblX - 90)); fo.setAttribute('y', String(lblY - 14));
-  fo.setAttribute('width', '180'); fo.setAttribute('height', '28');
+  fo.setAttribute('x', String(lblX - 60)); fo.setAttribute('y', String(lblY - 12));
+  fo.setAttribute('width', '120'); fo.setAttribute('height', '24');
   const inp = document.createElement('input');
   inp.id = 'groupLabelInput';
   inp.placeholder = '그룹명';
@@ -3902,7 +3905,7 @@ function renderGroupPreview() {
   inp.value = groupSheetData.editGroupId
     ? (getGraphGroups().find(g => g.id === groupSheetData.editGroupId)?.name || '')
     : '';
-  inp.style.cssText = 'border:none;background:' + color + ';font-family:inherit;font-size:12px;font-weight:600;color:' + darkenColor(color) + ';padding:1px 4px;outline:none;text-align:center;border-radius:6px;min-width:40px;max-width:180px;width:auto;';
+  inp.style.cssText = 'width:120px;border:none;background:' + color + ';font-family:inherit;font-size:11px;font-weight:600;color:' + darkenColor(color) + ';padding:1px 4px;outline:none;text-align:center;border-radius:6px;';
   fo.appendChild(inp);
   svg.appendChild(fo);
 }
@@ -4224,10 +4227,13 @@ function updateGraphEdges() {
         bestMy = my + ny * R;
       }
     }
-    // 수직(|angle|>45)이면 무조건 -90, 수평이면 읽기 편한 방향
-    if (bestAngle > 90) bestAngle -= 180;
-    if (bestAngle < -90) bestAngle += 180;
+    // 수직(|angle|>45)이면 무조건 -90 (화면 기준 반시계)
+    // atan2 범위 -180~180 정규화
+    while (bestAngle > 180) bestAngle -= 360;
+    while (bestAngle < -180) bestAngle += 360;
     if (Math.abs(bestAngle) > 45) bestAngle = -90;
+    else if (bestAngle > 90) bestAngle -= 180;
+    else if (bestAngle < -90) bestAngle += 180;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
