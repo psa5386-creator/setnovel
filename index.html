@@ -3416,36 +3416,30 @@ function renderGraphView() {
     groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
-    groupPath.setAttribute('stroke-width', R * 2);
+    groupPath.setAttribute('stroke-width', '2.5');
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
     groupPath.setAttribute('stroke-opacity', '1');
     // 내부 채우기 없이 테두리만: paint-order로 stroke 아래에 fill 없음
     grpG.appendChild(groupPath);
 
-    // 안쪽을 배경색으로 덮어서 테두리선만 보이게
-    const innerPath = document.createElementNS(NS2, 'path');
-    innerPath.setAttribute('d', hullD);
-    innerPath.setAttribute('fill', 'none');
-    innerPath.setAttribute('stroke', 'transparent');
-    innerPath.setAttribute('stroke-width', (R * 2) - 5);
-    innerPath.setAttribute('stroke-linejoin', 'round');
-    innerPath.setAttribute('stroke-linecap', 'round');
-    grpG.appendChild(innerPath);
+
 
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
 
-    // 라벨: 가장 위쪽 노드 기준 상단
-    const topPt = pts.reduce((a, b) => a.y < b.y ? a : b);
-    const cx2 = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    // 라벨: hull 최상단 수평엣지(y값 가장 작은 두 꼭짓점) 중심에 배치
+    const sortedByY = hull.slice().sort((a, b) => a.y - b.y);
+    const topTwo = sortedByY.slice(0, Math.min(2, sortedByY.length));
+    const lblX = topTwo.reduce((s, p) => s + p.x, 0) / topTwo.length;
+    const lblY = topTwo.reduce((s, p) => s + p.y, 0) / topTwo.length - R;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
-    lbl.style.left = cx2 + 'px';
-    lbl.style.top  = (topPt.y - R + 10) + 'px';
-    lbl.style.color = 'var(--surface)';
+    lbl.style.left = lblX + 'px';
+    lbl.style.top  = lblY + 'px';
+    lbl.style.color = darkenColor(color);
     lbl.style.background = color;
     lbl.style.border = 'none';
     lbl.style.borderRadius = '6px';
@@ -4113,36 +4107,30 @@ function updateGraphEdges() {
     groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
-    groupPath.setAttribute('stroke-width', R * 2);
+    groupPath.setAttribute('stroke-width', '2.5');
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
     groupPath.setAttribute('stroke-opacity', '1');
     // 내부 채우기 없이 테두리만: paint-order로 stroke 아래에 fill 없음
     grpG.appendChild(groupPath);
 
-    // 안쪽을 배경색으로 덮어서 테두리선만 보이게
-    const innerPath = document.createElementNS(NS2, 'path');
-    innerPath.setAttribute('d', hullD);
-    innerPath.setAttribute('fill', 'none');
-    innerPath.setAttribute('stroke', 'transparent');
-    innerPath.setAttribute('stroke-width', (R * 2) - 5);
-    innerPath.setAttribute('stroke-linejoin', 'round');
-    innerPath.setAttribute('stroke-linecap', 'round');
-    grpG.appendChild(innerPath);
+
 
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
 
-    // 라벨: 가장 위쪽 노드 기준 상단
-    const topPt = pts.reduce((a, b) => a.y < b.y ? a : b);
-    const cx2 = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    // 라벨: hull 최상단 수평엣지(y값 가장 작은 두 꼭짓점) 중심에 배치
+    const sortedByY = hull.slice().sort((a, b) => a.y - b.y);
+    const topTwo = sortedByY.slice(0, Math.min(2, sortedByY.length));
+    const lblX = topTwo.reduce((s, p) => s + p.x, 0) / topTwo.length;
+    const lblY = topTwo.reduce((s, p) => s + p.y, 0) / topTwo.length - R;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
-    lbl.style.left = cx2 + 'px';
-    lbl.style.top  = (topPt.y - R + 10) + 'px';
-    lbl.style.color = 'var(--surface)';
+    lbl.style.left = lblX + 'px';
+    lbl.style.top  = lblY + 'px';
+    lbl.style.color = darkenColor(color);
     lbl.style.background = color;
     lbl.style.border = 'none';
     lbl.style.borderRadius = '6px';
