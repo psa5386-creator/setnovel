@@ -3419,10 +3419,9 @@ function renderGraphView() {
         bestMy = my + ny * R;
       }
     }
-    // 각도가 90도 이상이면 뒤집어서 읽기 편하게
+    // 수직(|angle|>45)이면 무조건 -90, 수평이면 읽기 편한 방향
     if (bestAngle > 90) bestAngle -= 180;
     if (bestAngle < -90) bestAngle += 180;
-    // 수직에 가까우면 항상 반시계(-90도)
     if (Math.abs(bestAngle) > 45) bestAngle = -90;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
@@ -4225,10 +4224,9 @@ function updateGraphEdges() {
         bestMy = my + ny * R;
       }
     }
-    // 각도가 90도 이상이면 뒤집어서 읽기 편하게
+    // 수직(|angle|>45)이면 무조건 -90, 수평이면 읽기 편한 방향
     if (bestAngle > 90) bestAngle -= 180;
     if (bestAngle < -90) bestAngle += 180;
-    // 수직에 가까우면 항상 반시계(-90도)
     if (Math.abs(bestAngle) > 45) bestAngle = -90;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
