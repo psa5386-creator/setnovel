@@ -1868,17 +1868,9 @@ body { background:var(--surface); }
           </div>
         </div>
         <!-- 선2 모드: 라벨1→선1→선2→라벨2, 두 선 중심이 노드 원 중심에 오도록 -->
+        <!-- 선2 모드: label2→선2→스페이서→선3→label3 -->
         <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
-          <input class="relation-label-input" id="relationLabelInput1b" placeholder="관계1" autocomplete="off">
-          <div class="relation-line-wrap" onclick="cycleRelationDir()">
-            <svg class="relation-line-svg" id="relationLineSvg1b" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine1b" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd1b"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart1b" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-            </svg>
-          </div>
-          <!-- 투명 스페이서: 두 선 사이 간격 -->
-          <div style="height:8px;flex-shrink:0;"></div>
+          <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir2()">
             <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
               <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
@@ -1886,7 +1878,15 @@ body { background:var(--surface); }
               <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
-          <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
+          <div style="height:8px;flex-shrink:0;"></div>
+          <div class="relation-line-wrap" onclick="cycleRelationDir3()">
+            <svg class="relation-line-svg" id="relationLineSvg3" viewBox="0 0 120 18" preserveAspectRatio="none">
+              <line id="relationDirLine3" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd3"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart3" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            </svg>
+          </div>
+          <input class="relation-label-input" id="relationLabelInput3" placeholder="관계3" autocomplete="off">
         </div>
       </div>
 
@@ -3596,14 +3596,17 @@ function renderGraphView() {
     }
 
     // 선2 존재 여부에 따라 offset 결정
-    const hasLine2 = edge.label2 || edge.dir2 !== 'none';
+    const hasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
     const offset1 = hasLine2 ? -7.5 : 0;
 
     // 선1
-    renderOneLine(edge.label, edge.dir, edge.color, offset1, false);
-    // 선2
+    renderOneLine(edge.label1, edge.dir1, edge.color1, offset1, false);
+    // 선2/선3
     if (hasLine2) {
-      renderOneLine(edge.label2, edge.dir2, edge.color2 || edge.color, 7.5, true);
+      renderOneLine(edge.label2, edge.dir2, edge.color2 || edge.color1, 7.5, true);
+      if (edge.label3 || edge.dir3 !== 'none') {
+        renderOneLine(edge.label3, edge.dir3, edge.color3 || edge.color1, 7.5, true);
+      }
     }
   });
 
@@ -4169,7 +4172,7 @@ function execGroupConfirm() {
 //  관계 추가 바텀시트
 // ════════════════════════════════════════
 const RELATION_COLORS = ['#2C2825','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
-let relationSheetData = { fromId: null, toId: null, dir: 'none', color: '#2C2825', editEdgeId: null, label2: '', dir2: 'none', color2: '#2C2825' };
+let relationSheetData = { fromId: null, toId: null, label1: '', dir1: 'none', color1: '#2C2825', label2: '', dir2: 'none', color2: '#2C2825', label3: '', dir3: 'none', color3: '#2C2825', editEdgeId: null };
 let relationLineMode = 1; // 1 or 2
 
 function getPersonName(personId) {
@@ -4188,12 +4191,16 @@ function openRelationSheet(fromId, toId) {
   );
   relationSheetData = {
     fromId, toId,
-    dir:   existing?.dir   || 'none',
-    color: existing?.color || '#2C2825',
-    editEdgeId: existing?.id || null,
+    label1: existing?.label1 || '',
+    dir1:   existing?.dir1   || 'none',
+    color1: existing?.color1 || '#2C2825',
     label2: existing?.label2 || '',
     dir2:   existing?.dir2   || 'none',
     color2: existing?.color2 || '#2C2825',
+    label3: existing?.label3 || '',
+    dir3:   existing?.dir3   || 'none',
+    color3: existing?.color3 || '#2C2825',
+    editEdgeId: existing?.id || null,
   };
 
   function setRelationNode(circleId, nameId, personId) {
@@ -4212,14 +4219,13 @@ function openRelationSheet(fromId, toId) {
   }
   setRelationNode('relationFromCircle', 'relationFromName', fromId);
   setRelationNode('relationToCircle',   'relationToName',   toId);
-  const label1val = existing?.label || '';
-  document.getElementById('relationLabelInput').value  = label1val;
-  document.getElementById('relationLabelInput1b').value = label1val;
-  document.getElementById('relationLabelInput2').value = existing?.label2 || '';
+  document.getElementById('relationLabelInput').value   = existing?.label1 || '';
+  document.getElementById('relationLabelInput2').value   = existing?.label2 || '';
+  document.getElementById('relationLabelInput3').value   = existing?.label3 || '';
   document.getElementById('relationSheetTitle').textContent = existing ? '관계 수정' : '관계 추가';
 
   // 선2 데이터 있으면 2선 모드, 없으면 1선 모드
-  const hasLine2 = existing && (existing.label2 || existing.dir2 !== 'none');
+  const hasLine2 = existing && (existing.label2 || existing.dir2 !== 'none' || existing.label3 || existing.dir3 !== 'none');
   setRelationLineMode(hasLine2 ? 2 : 1);
 
   renderRelationDir();
@@ -4241,20 +4247,24 @@ function onRelationSheetOverlayClick(e) {
 function saveRelationSheet() {
   const edges = getGraphEdges();
   const isTwo = relationLineMode === 2;
-  const labelInp = isTwo ? document.getElementById('relationLabelInput1b') : document.getElementById('relationLabelInput');
-  const label = (labelInp ? labelInp.value : '').trim();
-  // 선1 → 선1 input도 동기화
-  if (!isTwo) { const i = document.getElementById('relationLabelInput'); if (i) i.value = label; }
-  const { fromId, toId, dir, color, editEdgeId } = relationSheetData;
+  const { fromId, toId, editEdgeId } = relationSheetData;
+  // 선1 모드
+  const label1 = document.getElementById('relationLabelInput')?.value.trim() || '';
+  const dir1   = relationSheetData.dir1;
+  const color1 = relationSheetData.color1;
+  // 선2 모드 두 번째/세 번째 선
   const label2 = isTwo ? (document.getElementById('relationLabelInput2')?.value.trim() || '') : '';
-  const dir2   = isTwo ? relationSheetData.dir2   : 'none';
+  const dir2   = isTwo ? relationSheetData.dir2 : 'none';
   const color2 = isTwo ? relationSheetData.color2 : '#2C2825';
+  const label3 = isTwo ? (document.getElementById('relationLabelInput3')?.value.trim() || '') : '';
+  const dir3   = isTwo ? relationSheetData.dir3 : 'none';
+  const color3 = isTwo ? relationSheetData.color3 : '#2C2825';
 
   if (editEdgeId) {
     const edge = edges.find(e => e.id === editEdgeId);
-    if (edge) { edge.label = label; edge.dir = dir; edge.color = color; edge.label2 = label2; edge.dir2 = dir2; edge.color2 = color2; }
+    if (edge) { edge.label1 = label1; edge.dir1 = dir1; edge.color1 = color1; edge.label2 = label2; edge.dir2 = dir2; edge.color2 = color2; edge.label3 = label3; edge.dir3 = dir3; edge.color3 = color3; }
   } else {
-    edges.push({ id: 'edge-' + Date.now(), from: fromId, to: toId, label, dir, color, label2, dir2, color2 });
+    edges.push({ id: 'edge-' + Date.now(), from: fromId, to: toId, label1, dir1, color1, label2, dir2, color2, label3, dir3, color3 });
   }
   // Firebase 저장
   if (PROJECT_ID) {
@@ -4291,28 +4301,18 @@ function setRelationLineMode(mode) {
   t2.style.color        = isTwo  ? '#fff' : 'var(--text-secondary)';
 
   if (isTwo) {
-    // 선1b에 현재 선1 값 동기화
-    const inp1 = document.getElementById('relationLabelInput');
-    const inp1b = document.getElementById('relationLabelInput1b');
-    if (inp1 && inp1b) inp1b.value = inp1.value;
-    renderRelationDir();
+    renderRelationDir2();
+    renderRelationDir3();
   } else {
-    // 선1에 선1b 값 동기화
-    const inp1 = document.getElementById('relationLabelInput');
-    const inp1b = document.getElementById('relationLabelInput1b');
-    if (inp1 && inp1b) inp1.value = inp1b.value;
-    relationSheetData.label2 = '';
-    relationSheetData.dir2   = 'none';
-    relationSheetData.color2 = '#2C2825';
-    const inp2 = document.getElementById('relationLabelInput2');
-    if (inp2) inp2.value = '';
+    renderRelationDir();
+    setColorTarget(1);
   }
 }
 
 function cycleRelationDir() {
   const dirs = ['none', 'end', 'start', 'both'];
-  const idx = dirs.indexOf(relationSheetData.dir);
-  relationSheetData.dir = dirs[(idx + 1) % dirs.length];
+  const idx = dirs.indexOf(relationSheetData.dir1);
+  relationSheetData.dir1 = dirs[(idx + 1) % dirs.length];
   renderRelationDir();
 }
 
@@ -4323,21 +4323,27 @@ function cycleRelationDir2() {
   renderRelationDir2();
 }
 
+function cycleRelationDir3() {
+  const dirs = ['none', 'end', 'start', 'both'];
+  const idx = dirs.indexOf(relationSheetData.dir3);
+  relationSheetData.dir3 = dirs[(idx + 1) % dirs.length];
+  renderRelationDir3();
+}
+
 function renderRelationDir() {
-  const { dir, color } = relationSheetData;
-  // 선1 row
+  const { dir1, color1 } = relationSheetData;
   ['relationDirLine','relationDirLine1b'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.setAttribute('stroke', color);
+    const el = document.getElementById(id); if (el) el.setAttribute('stroke', color1);
   });
   ['relationArrowEnd','relationArrowEnd1b'].forEach(id => {
     const el = document.getElementById(id); if (!el) return;
-    el.setAttribute('stroke', color);
-    el.style.display = (dir === 'end' || dir === 'both') ? '' : 'none';
+    el.setAttribute('stroke', color1);
+    el.style.display = (dir1 === 'end' || dir1 === 'both') ? '' : 'none';
   });
   ['relationArrowStart','relationArrowStart1b'].forEach(id => {
     const el = document.getElementById(id); if (!el) return;
-    el.setAttribute('stroke', color);
-    el.style.display = (dir === 'start' || dir === 'both') ? '' : 'none';
+    el.setAttribute('stroke', color1);
+    el.style.display = (dir1 === 'start' || dir1 === 'both') ? '' : 'none';
   });
 }
 
@@ -4352,6 +4358,19 @@ function renderRelationDir2() {
   arrowStart.setAttribute('stroke', color2);
   arrowEnd.style.display   = (dir2 === 'end'   || dir2 === 'both') ? '' : 'none';
   arrowStart.style.display = (dir2 === 'start' || dir2 === 'both') ? '' : 'none';
+}
+
+function renderRelationDir3() {
+  const line        = document.getElementById('relationDirLine3');
+  const arrowEnd    = document.getElementById('relationArrowEnd3');
+  const arrowStart  = document.getElementById('relationArrowStart3');
+  if (!line) return;
+  const { dir3, color3 } = relationSheetData;
+  line.setAttribute('stroke', color3);
+  arrowEnd.setAttribute('stroke', color3);
+  arrowStart.setAttribute('stroke', color3);
+  arrowEnd.style.display   = (dir3 === 'end'   || dir3 === 'both') ? '' : 'none';
+  arrowStart.style.display = (dir3 === 'start' || dir3 === 'both') ? '' : 'none';
 }
 
 let colorTarget = 1; // 1 또는 2
@@ -4374,18 +4393,21 @@ function setColorTarget(n) {
 function renderRelationColors() {
   const row = document.getElementById('relationColorRow');
   row.innerHTML = '';
-  const activeColor = colorTarget === 1 ? relationSheetData.color : relationSheetData.color2;
+  const activeColor = colorTarget === 1 ? relationSheetData.color1 : (relationLineMode === 2 && colorTarget === 2 ? relationSheetData.color2 : relationSheetData.color3);
   RELATION_COLORS.forEach(c => {
     const chip = document.createElement('div');
     chip.className = 'relation-color-chip' + (c === activeColor ? ' selected' : '');
     chip.style.background = c;
     chip.onclick = () => {
       if (colorTarget === 1) {
-        relationSheetData.color = c;
+        relationSheetData.color1 = c;
         renderRelationDir();
-      } else {
+      } else if (colorTarget === 2) {
         relationSheetData.color2 = c;
         renderRelationDir2();
+      } else {
+        relationSheetData.color3 = c;
+        renderRelationDir3();
       }
       renderRelationColors();
     };
@@ -4495,10 +4517,13 @@ function updateGraphEdges() {
       if (dir==='end'  || dir==='both') drawArrow(x2,y2,x1,y1);
       if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
     }
-    const hasLine2e = edge.label2 || edge.dir2 !== 'none';
-    drawOneLine(edge.dir, edge.color, hasLine2e ? -7.5 : 0);
+    const hasLine2e = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
+    drawOneLine(edge.dir1, edge.color1, hasLine2e ? -7.5 : 0);
     if (hasLine2e) {
-      drawOneLine(edge.dir2, edge.color2 || edge.color, 7.5);
+      drawOneLine(edge.dir2, edge.color2 || edge.color1, 7.5);
+      if (edge.label3 || edge.dir3 !== 'none') {
+        drawOneLine(edge.dir3, edge.color3 || edge.color1, 7.5);
+      }
     }
   });
   // 그룹 바운더리 + 라벨 업데이트
@@ -4585,7 +4610,7 @@ function updateGraphEdges() {
     const dxe = tc.x-fc.x, dye = tc.y-fc.y, dle = Math.sqrt(dxe*dxe+dye*dye)||1;
     const nxe = -dye/dle, nye = dxe/dle;
     const isLabel2 = lbl.dataset.label2 === '1';
-    const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none';
+    const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
     const offset = isLabel2 ? 7.5 : (edgeHasLine2 ? -7.5 : 0);
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
@@ -9665,7 +9690,9 @@ Object.assign(window, {
   setColorTarget,
   toggleColorTarget,
   cycleRelationDir2,
+  cycleRelationDir3,
   renderRelationDir2,
+  renderRelationDir3,
   saveItem,
   saveItemsOrder,
   saveMenuData,
