@@ -3469,14 +3469,23 @@ function renderGraphView() {
     const fc = imgCenter(fromPos), tc = imgCenter(toPos);
 
     const NS = 'http://www.w3.org/2000/svg';
-    const ah = 6;
+    const ah = 4.5; // 6 * 0.75
 
     // 법선 방향 계산 (중앙선 기준 수직)
     const dx = tc.x - fc.x, dy = tc.y - fc.y;
     const dl = Math.sqrt(dx*dx + dy*dy) || 1;
     const nx = -dy/dl, ny = dx/dl; // 법선 (위쪽)
 
-    function renderOneLine(label, dir, color, offset, lblBelow, isLabel2 = false) {
+    // 선 각도 (from→to 방향)
+    const angle = Math.atan2(dy, dx); // -π ~ π
+    // 수직선 여부
+    const isVertical = Math.abs(dx) < 1;
+    // 각도 기반 라벨 면 결정
+    // 90°~270° (시계반대방향) = angle 범위: π/2 ~ π 또는 -π ~ -π/2 → 왼쪽 방향
+    // 즉 |angle| > π/2 이면 "왼쪽 방향"
+    const goingLeft = Math.abs(angle) > Math.PI / 2;
+
+    function renderOneLine(label, dir, color, offset, isLabel2 = false) {
       if (!label && dir === 'none' && !color) return;
       const {x1, y1, x2, y2} = trimLineToNodes(
         {x: fc.x + nx*offset, y: fc.y + ny*offset},
@@ -3523,6 +3532,15 @@ function renderGraphView() {
         if (isLabel2) lbl.dataset.label2 = '1';
         const lfc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
         const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
+        // 라벨 면 결정: 선 방향과 isLabel2 조합
+        // 선1(isLabel2=false): 왼쪽방향→위, 오른쪽방향→아래  수직→왼쪽(offset<0)
+        // 선2(isLabel2=true):  왼쪽방향→아래, 오른쪽방향→위  수직→오른쪽(offset>0)
+        let lblBelow;
+        if (isVertical) {
+          lblBelow = isLabel2; // 선1→왼(below=false), 선2→오(below=true) - positionEdgeLabel이 below로 부호 반전
+        } else {
+          lblBelow = isLabel2 ? !goingLeft : goingLeft;
+        }
         positionEdgeLabel(lbl, lfc, ltc, lblBelow);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
         lbl.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
@@ -3530,11 +3548,11 @@ function renderGraphView() {
       }
     }
 
-    // 선1: 중앙에서 위로 10
-    renderOneLine(edge.label, edge.dir, edge.color, -10, false);
-    // 선2: 중앙에서 아래로 10 (라벨은 선 아래)
+    // 선1: 오프셋 -7.5
+    renderOneLine(edge.label, edge.dir, edge.color, -7.5, false);
+    // 선2: 오프셋 +7.5
     if (edge.label2 || edge.dir2 !== 'none') {
-      renderOneLine(edge.label2, edge.dir2, edge.color2 || edge.color, 10, true, true);
+      renderOneLine(edge.label2, edge.dir2, edge.color2 || edge.color, 7.5, true);
     }
   });
 
@@ -4256,7 +4274,7 @@ function updateGraphEdges() {
   const ic = (pos) => ({ x: pos.x, y: pos.y });
   // 선+화살촉 모두 제거 후 재렌더
   svg.querySelectorAll('line, polyline').forEach(el => el.remove());
-  const ah = 6;
+  const ah = 4.5; // 6 * 0.75
   edges.forEach(edge => {
     const f = nodes[edge.from], t = nodes[edge.to];
     if (!f || !t) return;
@@ -4292,9 +4310,9 @@ function updateGraphEdges() {
       if (dir==='end'  || dir==='both') drawArrow(x2,y2,x1,y1);
       if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
     }
-    drawOneLine(edge.dir, edge.color, -10);
+    drawOneLine(edge.dir, edge.color, -7.5);
     if (edge.label2 || edge.dir2 !== 'none') {
-      drawOneLine(edge.dir2, edge.color2 || edge.color, 10);
+      drawOneLine(edge.dir2, edge.color2 || edge.color, 7.5);
     }
   });
   // 그룹 바운더리 + 라벨 업데이트
@@ -4379,12 +4397,20 @@ function updateGraphEdges() {
     const fc = ic(f), tc = ic(t);
     const dxe = tc.x-fc.x, dye = tc.y-fc.y, dle = Math.sqrt(dxe*dxe+dye*dye)||1;
     const nxe = -dye/dle, nye = dxe/dle;
-    // label2 라벨인지 판별 (data-label2 속성)
     const isLabel2 = lbl.dataset.label2 === '1';
-    const offset = isLabel2 ? 10 : -10;
+    const offset = isLabel2 ? 7.5 : -7.5;
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
-    positionEdgeLabel(lbl, lfc, ltc, isLabel2);
+    const angleE = Math.atan2(dye, dxe);
+    const isVerticalE = Math.abs(dxe) < 1;
+    const goingLeftE = Math.abs(angleE) > Math.PI / 2;
+    let lblBelow;
+    if (isVerticalE) {
+      lblBelow = isLabel2;
+    } else {
+      lblBelow = isLabel2 ? !goingLeftE : goingLeftE;
+    }
+    positionEdgeLabel(lbl, lfc, ltc, lblBelow);
   });
 }
 
