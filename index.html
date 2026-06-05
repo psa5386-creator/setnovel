@@ -1139,10 +1139,11 @@ body { background:var(--surface); }
 .graph-node-img {
   width:64px; height:64px; border-radius:50%;
   background:var(--surface); border:2.5px solid var(--border);
-  overflow:hidden; display:flex; align-items:center; justify-content:center;
+  overflow:visible; display:flex; align-items:center; justify-content:center;
   transition:border-color 0.15s, box-shadow 0.15s; flex-shrink:0;
+  position:relative;
 }
-.graph-node-img img { width:100%; height:100%; object-fit:cover; }
+.graph-node-img img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
 .graph-node-img svg { width:36px; height:36px; fill:var(--border); }
 .graph-node.selected .graph-node-img {
   border-color:var(--accent-green);
@@ -1163,7 +1164,7 @@ body { background:var(--surface); }
 }
 .graph-node-add.visible { display:flex; }
 .graph-node-grp {
-  position:absolute; top:50px; right:-14px;
+  position:absolute; bottom:-14px; right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
@@ -3520,7 +3521,7 @@ function renderGraphView() {
     addBtn.innerHTML = '+';
     addBtn.onclick = (e) => { e.stopPropagation(); onGraphAddRelation(p.id); };
     addBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    node.appendChild(addBtn);  // imgWrap 아닌 node에 붙임
+    imgWrap.appendChild(addBtn);
 
     // ○ 아이콘 (2개+ 선택 시, 마지막 선택 노드)
     const grpBtn = document.createElement('div');
@@ -3530,7 +3531,7 @@ function renderGraphView() {
     grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    node.appendChild(grpBtn);
+    imgWrap.appendChild(grpBtn);
 
     const nameEl = document.createElement('div');
     nameEl.className = 'graph-node-name';
