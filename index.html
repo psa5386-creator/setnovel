@@ -3638,12 +3638,14 @@ function renderGraphView() {
     const hasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
     const offset1 = hasLine2 ? -7.5 : 0;
 
-    // 선1
+    // 선1: offset1, 라벨 규칙 A (isLabel3=false)
     renderOneLine(edge.label1, edge.dir1, edge.color1, offset1, false);
     // 선2/선3
     if (hasLine2) {
+      // 선2: offset +7.5, 라벨 규칙 A (선1과 동일, isLabel3=false)
       renderOneLine(edge.label2, edge.dir2, edge.color2, 7.5, false);
       if (edge.label3 || edge.dir3 !== 'none') {
+        // 선3: offset -7.5, 라벨 규칙 B (반대, isLabel3=true)
         renderOneLine(edge.label3, edge.dir3, edge.color3, -7.5, true);
       }
     }
@@ -4418,14 +4420,20 @@ function renderRelationDir3() {
 
 let colorTarget = 1; // 1 또는 2
 window.colorTarget = colorTarget;
-function toggleColorTarget() { setColorTarget(colorTarget === 1 ? 2 : 1); }
+function toggleColorTarget() {
+  if (relationLineMode === 2) {
+    setColorTarget(colorTarget === 1 ? 2 : colorTarget === 2 ? 3 : 1);
+  } else {
+    setColorTarget(1); // 선1 모드는 항상 1
+  }
+}
 
 function setColorTarget(n) {
   colorTarget = n;
   window.colorTarget = n;
   const btn = document.getElementById('colorTargetToggleBtn');
   if (btn) {
-    btn.textContent = n === 1 ? '1' : '2';
+    btn.textContent = String(n);
     btn.style.background = 'var(--accent-green)';
     btn.style.borderColor = 'var(--accent-green)';
     btn.style.color = '#fff';
@@ -4654,6 +4662,10 @@ function updateGraphEdges() {
     const nxe = -dye/dle, nye = dxe/dle;
     const isLabel3 = lbl.dataset.label2 === '1'; // data-label2='1'이 선3 라벨
     const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
+    // 선1: offset -7.5(2선모드) or 0, 선2: +7.5, 선3: -7.5
+    // isLabel3=true → 선3 → offset -7.5
+    // isLabel3=false + edgeHasLine2 → 선1또는선2 → dataset으로 구분 불가하므로 label2속성 없으면 선1/-7.5, 선2/+7.5
+    // 실제로는 선2 라벨은 data-label2 없음, 선3 라벨은 data-label2='1'
     const offset = isLabel3 ? -7.5 : (edgeHasLine2 ? 7.5 : 0);
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
