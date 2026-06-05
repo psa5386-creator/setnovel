@@ -1240,8 +1240,8 @@ body { background:var(--surface); }
 /* 그룹 바텀시트 전용 */
 .group-preview-wrap {
   display:flex; align-items:center; justify-content:center;
-  padding:15px 15px 8px; flex-shrink:0; position:relative;
-  height:160px;
+  padding:8px 15px 8px; flex-shrink:0; position:relative;
+  height:150px;
 }
 .group-preview-svg {
   width:100%; height:140px; overflow:visible;
@@ -3840,11 +3840,11 @@ function renderGroupPreview() {
   if (!svg) return;
   svg.innerHTML = '';
   const color = groupSheetData.color || '#72B878';
-  const W = 300, H = 140, R = 34, PAD = 54;
+  const R = 34, PAD = 54;
   const NS = 'http://www.w3.org/2000/svg';
 
-  // 두 노드 위치 (고정)
-  const pts = [{x: 80, y: 80}, {x: 220, y: 80}];
+  // 노드 위치 — 좌우 넓게
+  const pts = [{x: 65, y: 80}, {x: 235, y: 80}];
 
   // 바운더리 선
   const pathD = offsetHullPath(pts, PAD);
@@ -3855,51 +3855,55 @@ function renderGroupPreview() {
   boundary.setAttribute('stroke-width', '2.5');
   svg.appendChild(boundary);
 
-  // 노드 그래픽 (관계도와 동일)
-  const NODE_SVG = '<path d="M128,0c72.74,0,81.79,54.1,81.79,54.1,0,0,28.16-1.11,30.39,32.61,2.22,33.72-31.13,35.02-31.13,35.02,0,0-6.45,41.93-81.04,41.93-74.59,0-81.04-41.93-81.04-41.93,0,0-33.35-1.3-31.13-35.02,2.22-33.72,30.39-32.61,30.39-32.61C46.21,54.1,55.26,0,128,0ZM128,178.45c77.13,0,71.54,77.55,71.54,77.55H56.46s-5.6-77.55,71.54-77.55Z"/>';
-  pts.forEach(p => {
-    // 원형 배경
-    const circle = document.createElementNS(NS, 'circle');
-    circle.setAttribute('cx', p.x); circle.setAttribute('cy', p.y);
-    circle.setAttribute('r', R);
-    circle.setAttribute('fill', 'var(--surface)');
-    circle.setAttribute('stroke', 'var(--border)');
-    circle.setAttribute('stroke-width', '2.5');
-    svg.appendChild(circle);
-    // 인물 아이콘
-    const g = document.createElementNS(NS, 'g');
-    const scale = (R*1.3)/128;
-    g.setAttribute('transform', 'translate(' + (p.x - R*0.65) + ',' + (p.y - R*0.65) + ') scale(' + scale + ')');
-    g.innerHTML = '<path d="M128,0c72.74,0,81.79,54.1,81.79,54.1,0,0,28.16-1.11,30.39,32.61,2.22,33.72-31.13,35.02-31.13,35.02,0,0-6.45,41.93-81.04,41.93-74.59,0-81.04-41.93-81.04-41.93,0,0-33.35-1.3-31.13-35.02,2.22-33.72,30.39-32.61,30.39-32.61C46.21,54.1,55.26,0,128,0ZM128,178.45c77.13,0,71.54,77.55,71.54,77.55H56.46s-5.6-77.55,71.54-77.55Z" fill="var(--border)"/>';
-    // clip-path로 원 안에만
-    const clipId = 'prev-clip-' + p.x;
+  // 노드 그래픽
+  const PERSON_PATH = 'M128,0c72.74,0,81.79,54.1,81.79,54.1,0,0,28.16-1.11,30.39,32.61,2.22,33.72-31.13,35.02-31.13,35.02,0,0-6.45,41.93-81.04,41.93-74.59,0-81.04-41.93-81.04-41.93,0,0-33.35-1.3-31.13-35.02,2.22-33.72,30.39-32.61,30.39-32.61C46.21,54.1,55.26,0,128,0ZM128,178.45c77.13,0,71.54,77.55,71.54,77.55H56.46s-5.6-77.55,71.54-77.55Z';
+
+  pts.forEach((p, i) => {
+    const clipId = 'grp-prev-clip-' + i;
     const defs = document.createElementNS(NS, 'defs');
     const clip = document.createElementNS(NS, 'clipPath');
     clip.setAttribute('id', clipId);
-    const clipCircle = document.createElementNS(NS, 'circle');
-    clipCircle.setAttribute('cx', p.x); clipCircle.setAttribute('cy', p.y); clipCircle.setAttribute('r', R-1);
-    clip.appendChild(clipCircle); defs.appendChild(clip); svg.appendChild(defs);
-    g.setAttribute('clip-path', 'url(#' + clipId + ')');
-    svg.appendChild(g);
+    const cc = document.createElementNS(NS, 'circle');
+    cc.setAttribute('cx', p.x); cc.setAttribute('cy', p.y); cc.setAttribute('r', R);
+    clip.appendChild(cc); defs.appendChild(clip); svg.appendChild(defs);
+
+    // 원 배경
+    const circle = document.createElementNS(NS, 'circle');
+    circle.setAttribute('cx', p.x); circle.setAttribute('cy', p.y); circle.setAttribute('r', R);
+    circle.setAttribute('fill', 'var(--surface)');
+    circle.setAttribute('stroke', 'var(--border)'); circle.setAttribute('stroke-width', '2.5');
+    svg.appendChild(circle);
+
+    // 인물 아이콘 — viewBox 256×256 기준으로 R*2 크기에 맞게
+    const iconSize = R * 2;
+    const iconG = document.createElementNS(NS, 'g');
+    iconG.setAttribute('clip-path', 'url(#' + clipId + ')');
+    const iconSvg = document.createElementNS(NS, 'svg');
+    iconSvg.setAttribute('x', p.x - R); iconSvg.setAttribute('y', p.y - R);
+    iconSvg.setAttribute('width', iconSize); iconSvg.setAttribute('height', iconSize);
+    iconSvg.setAttribute('viewBox', '0 0 256 256');
+    const iconPath = document.createElementNS(NS, 'path');
+    iconPath.setAttribute('d', PERSON_PATH);
+    iconPath.setAttribute('fill', 'var(--border)');
+    iconSvg.appendChild(iconPath);
+    iconG.appendChild(iconSvg);
+    svg.appendChild(iconG);
   });
 
-  // 라벨 입력창: 바운더리 상단 중앙
+  // 라벨 입력창 — foreignObject, 너비 auto처럼 보이도록 충분히 크게
   const lblX = (pts[0].x + pts[1].x) / 2;
   const lblY = pts[0].y - PAD;
-
-  // foreignObject로 input 삽입
   const fo = document.createElementNS(NS, 'foreignObject');
-  fo.setAttribute('x', lblX - 60); fo.setAttribute('y', lblY - 14);
-  fo.setAttribute('width', '120'); fo.setAttribute('height', '28');
+  fo.setAttribute('x', '50'); fo.setAttribute('y', String(lblY - 14));
+  fo.setAttribute('width', '200'); fo.setAttribute('height', '28');
   const inp = document.createElement('input');
-  inp.className = 'group-label-input';
   inp.id = 'groupLabelInput';
   inp.placeholder = '그룹명';
   inp.autocomplete = 'off';
   inp.value = groupSheetData.editGroupId
     ? (getGraphGroups().find(g => g.id === groupSheetData.editGroupId)?.name || '')
     : '';
-  inp.style.cssText = 'width:120px;border:none;background:' + color + ';font-family:inherit;font-size:12px;font-weight:600;color:' + darkenColor(color) + ';padding:2px 8px;outline:none;text-align:center;border-radius:6px;';
+  inp.style.cssText = 'width:200px;border:none;background:' + color + ';font-family:inherit;font-size:12px;font-weight:600;color:' + darkenColor(color) + ';padding:2px 8px;outline:none;text-align:center;border-radius:6px;box-sizing:border-box;';
   fo.appendChild(inp);
   svg.appendChild(fo);
 }
