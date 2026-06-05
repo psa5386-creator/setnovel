@@ -4490,14 +4490,13 @@ function positionEdgeLabel(lbl, fc, tc, lblBelow = false, centerX = null) {
   let fnx = -Math.sin(angle);
   let fny =  Math.cos(angle);
 
-  // 수직선: centerX 기준 왼쪽/오른쪽
+  // 수직선: lblBelow=false→왼쪽, lblBelow=true→오른쪽
   if (Math.abs(dx) < 1) {
-    const ref = centerX !== null ? centerX : mx;
-    fnx = fc.x >= ref ? 1 : -1;
+    fnx = lblBelow ? 1 : -1;
     fny = 0;
   }
 
-  // lblBelow=false → +법선방향, lblBelow=true → -법선방향
+  // lblBelow=false → +법선방향(위/왼), lblBelow=true → -법선방향(아래/오른)
   const sign = lblBelow ? -1 : 1;
   const lx = mx + fnx * OFFSET * sign;
   const ly = my + fny * OFFSET * sign;
