@@ -1154,7 +1154,7 @@ body { background:var(--surface); }
   overflow:hidden; text-overflow:ellipsis; text-align:center;
 }
 .graph-node-add {
-  position:absolute; top:-14px; right:-14px;
+  position:absolute; top:0px; right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
@@ -1163,7 +1163,7 @@ body { background:var(--surface); }
 }
 .graph-node-add.visible { display:flex; }
 .graph-node-grp {
-  position:absolute; bottom:-14px; right:-14px;
+  position:absolute; bottom:calc(100% - 50px); right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
@@ -3515,7 +3515,7 @@ function renderGraphView() {
     addBtn.innerHTML = '+';
     addBtn.onclick = (e) => { e.stopPropagation(); onGraphAddRelation(p.id); };
     addBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    imgWrap.appendChild(addBtn);
+    node.appendChild(addBtn);  // imgWrap 아닌 node에 붙임
 
     // ○ 아이콘 (2개+ 선택 시, 마지막 선택 노드)
     const grpBtn = document.createElement('div');
@@ -3524,13 +3524,13 @@ function renderGraphView() {
     grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '');
     // 2개 선택 시: + 아래에 / 3개+ 선택 시: + 위치와 동일
     grpBtn.style.top = 'auto';
-    grpBtn.style.bottom = '-14px';
+    grpBtn.style.bottom = 'calc(100% - 50px)'; // imgWrap 하단 부근
     grpBtn.style.right = '-14px';
-    if (isGrpWith2) { grpBtn.style.bottom = '-14px'; grpBtn.style.right = '-46px'; }
+    if (isGrpWith2) { grpBtn.style.right = '-46px'; }
     grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    imgWrap.appendChild(grpBtn);
+    node.appendChild(grpBtn);
 
     const nameEl = document.createElement('div');
     nameEl.className = 'graph-node-name';
@@ -3541,7 +3541,7 @@ function renderGraphView() {
 
     // 노드 탭 → 선택
     node.addEventListener('pointerdown', (e) => {
-      if (e.target === addBtn) return;
+      if (e.target === addBtn || e.target === grpBtn) return;
       onGraphNodePointerDown(e, p.id, node, pos);
     });
 
