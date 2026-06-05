@@ -3623,8 +3623,10 @@ function renderGraphView() {
         if (isLabel3) lbl.dataset.label2 = '1';
         const lfc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
         const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
-        // offset 부호로만 라벨 방향 결정: offset>0 → ny방향(lblBelow=true), offset<0 → 반대(lblBelow=false)
-        const lblBelow = Math.abs(dx) < 1 ? false : (offset * (ny >= 0 ? 1 : -1)) > 0;
+        // 선1(offset=0): 항상 위(lblBelow=false)
+        // 선2(offset<0 기준): 선3 반대방향 → lblBelow=false(+법선)
+        // 선3(offset>0 기준): 선2 반대방향 → lblBelow=true(-법선)
+        const lblBelow = isLabel3 ? true : false;
         positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
         lbl.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
@@ -4485,19 +4487,17 @@ function positionEdgeLabel(lbl, fc, tc, lblBelow = false, centerX = null) {
   const angle = Math.atan2(dy, dx);
 
   // 선에 수직인 벡터 (-sin, cos)
-  // ny>0 반전 없음 - lblBelow 부호로만 방향 결정
-  const nx = -Math.sin(angle);
-  const ny =  Math.cos(angle);
+  let fnx = -Math.sin(angle);
+  let fny =  Math.cos(angle);
 
-  let fnx = nx, fny = ny;
-  // 수직선 예외: centerX 기준으로 선이 오른쪽이면 라벨도 오른쪽
+  // 수직선: centerX 기준 왼쪽/오른쪽
   if (Math.abs(dx) < 1) {
     const ref = centerX !== null ? centerX : mx;
     fnx = fc.x >= ref ? 1 : -1;
     fny = 0;
   }
 
-  // lblBelow=false → +nx방향, lblBelow=true → -nx방향
+  // lblBelow=false → +법선방향, lblBelow=true → -법선방향
   const sign = lblBelow ? -1 : 1;
   const lx = mx + fnx * OFFSET * sign;
   const ly = my + fny * OFFSET * sign;
@@ -4663,8 +4663,8 @@ function updateGraphEdges() {
     const offset = edgeHasLine2 ? (isLabel3 ? 7.5 * dirSignE : -7.5 * dirSignE) : 0;
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
-    // offset 부호로만 라벨 방향 결정
-    const lblBelow = Math.abs(dxe) < 1 ? false : (offset * (nye >= 0 ? 1 : -1)) > 0;
+    // 선1/선2: lblBelow=false(+법선방향), 선3: lblBelow=true(-법선방향)
+    const lblBelow = isLabel3 ? true : false;
     positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
   });
 }
