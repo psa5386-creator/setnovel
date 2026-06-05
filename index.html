@@ -3324,10 +3324,31 @@ function initGraphNode(personId) {
   const item = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
   if (!item) return;
   if (!item.graphPos) {
+    const nodes = getGraphNodes();
+    const usedPositions = new Set(
+      Object.values(nodes).map(p => `${snapToGrid(p.x)},${snapToGrid(p.y)}`)
+    );
     const canvas = document.getElementById('personGraphCanvas');
     const cx = canvas.clientWidth  || window.innerWidth;
     const cy = canvas.clientHeight || window.innerHeight;
-    item.graphPos = { x: cx / 2, y: cy / 2 };
+    // 중앙 그리드셀부터 나선형으로 빈 셀 탐색
+    const startX = snapToGrid(cx / 2);
+    const startY = snapToGrid(cy / 2);
+    let found = null;
+    outer: for (let r = 0; r <= 10; r++) {
+      for (let dx = -r; dx <= r; dx++) {
+        for (let dy = -r; dy <= r; dy++) {
+          if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue;
+          const x = startX + dx * GRAPH_GRID;
+          const y = startY + dy * GRAPH_GRID;
+          if (!usedPositions.has(`${x},${y}`)) { found = { x, y }; break outer; }
+        }
+      }
+    }
+    item.graphPos = found || { x: startX, y: startY };
+  } else {
+    // 기존 위치도 그리드에 스냅
+    item.graphPos = { x: snapToGrid(item.graphPos.x), y: snapToGrid(item.graphPos.y) };
   }
 }
 
@@ -3378,7 +3399,7 @@ function renderGraphView() {
       .map(pos => imgCenter(pos));
     if (pts.length === 0) return;
 
-    const R = NODE_R + 15;
+    const R = 54;
     const NS2 = 'http://www.w3.org/2000/svg';
     const grpG = document.createElementNS(NS2, 'g');
     grpG.dataset.groupId = group.id;
@@ -3563,6 +3584,9 @@ function renderGraphView() {
 }
 
 // ── 노드 선택 & 드래그 ──
+const GRAPH_GRID = 150; // 그리드 셀 크기 (px)
+function snapToGrid(v) { return Math.round(v / GRAPH_GRID) * GRAPH_GRID; }
+
 function onGraphNodePointerDown(e, personId, nodeEl, pos) {
   e.stopPropagation();
   const canvas = document.getElementById('personGraphCanvas');
@@ -3585,12 +3609,19 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
     if (moved && PROJECT_ID) {
+      // 그리드 스냅
+      const snappedX = snapToGrid(pos.x);
+      const snappedY = snapToGrid(pos.y);
+      pos.x = snappedX; pos.y = snappedY;
+      nodeEl.style.left = snappedX + 'px';
+      nodeEl.style.top  = snappedY + 'px';
       const movedItem = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
       if (movedItem) {
+        movedItem.graphPos = { x: snappedX, y: snappedY };
         const order = (STORY_DB[PROJECT_ID] || []).findIndex(i => i.id === personId);
         ref.item(PROJECT_ID, personId).set({ ...movedItem, _order: order });
       }
-
+      updateGraphEdges();
     }
     if (!moved) onGraphNodeTap(personId);
   }
@@ -4052,7 +4083,7 @@ function updateGraphEdges() {
   groups.forEach(group => {
     const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean).map(pos => ic(pos));
     if (pts.length === 0) return;
-    const R = NODE_R + 15;
+    const R = 54;
     const NS2 = 'http://www.w3.org/2000/svg';
     const grpG = document.createElementNS(NS2, 'g');
     grpG.dataset.groupId = group.id;
