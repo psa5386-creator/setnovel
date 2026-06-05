@@ -3387,7 +3387,7 @@ function renderGraphView() {
     } else {
       const hull = convexHull(pts);
       expandedPts = expandHull(hull, PAD);
-      pathD = roundedHullPath(expandedPts, NODE_R);
+      pathD = roundedHullPath(expandedPts, NODE_R * 2);
     }
 
     // SVG path — 다른 요소보다 먼저 삽입 (맨 뒤에 그려짐 = 배경)
@@ -4025,6 +4025,7 @@ function positionEdgeLabel(lbl, fc, tc) {
 // SVG 선만 위치 업데이트 (드래그 중 실시간)
 function updateGraphEdges() {
   const svg   = document.getElementById('graphSvg');
+  const world = document.getElementById('graphWorld');
   const nodes = getGraphNodes();
   const edges = getGraphEdges();
   const NODE_IMG_OFFSET_Y = 11;
@@ -4062,9 +4063,50 @@ function updateGraphEdges() {
     if (edge.dir==='end' ||edge.dir==='both') drawArrow(x2,y2,x1,y1);
     if (edge.dir==='start'||edge.dir==='both') drawArrow(x1,y1,x2,y2);
   });
-  // 라벨 위치도 업데이트
-  const canvas = document.getElementById('personGraphCanvas');
-  const world = document.getElementById('graphWorld');
+  // 그룹 바운더리 path + 라벨 위치 업데이트
+  const groups = getGraphGroups();
+  svg.querySelectorAll('path[data-group-id]').forEach(el => el.remove());
+  world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
+  groups.forEach(group => {
+    const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean)
+      .map(pos => ic(pos));
+    if (pts.length === 0) return;
+    const PAD = NODE_R * 2 + 20;
+    let pathD = '', expandedPts = null;
+    if (pts.length === 1) {
+      const r = PAD + NODE_R;
+      pathD = `M ${pts[0].x - r} ${pts[0].y} a ${r} ${r} 0 1 0 ${r*2} 0 a ${r} ${r} 0 1 0 ${-r*2} 0`;
+      expandedPts = [pts[0]];
+    } else {
+      const hull = convexHull(pts);
+      expandedPts = expandHull(hull, PAD);
+      pathD = roundedHullPath(expandedPts, NODE_R * 2);
+    }
+    const groupPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    groupPath.setAttribute('d', pathD);
+    groupPath.setAttribute('fill', group.color || '#E8F4E8');
+    groupPath.setAttribute('stroke', 'none');
+    groupPath.dataset.groupId = group.id;
+    const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
+    if (firstNonDefs) svg.insertBefore(groupPath, firstNonDefs);
+    else svg.appendChild(groupPath);
+    // 라벨
+    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+    const lbl = document.createElement('div');
+    lbl.className = 'graph-group-label';
+    lbl.textContent = group.name || '';
+    lbl.style.left = cx + 'px';
+    lbl.style.top  = cy + 'px';
+    lbl.style.color = darkenColor(group.color || '#E8F4E8');
+    lbl.dataset.groupId = group.id;
+    let t2 = null;
+    lbl.addEventListener('pointerdown', e => { e.stopPropagation(); t2 = setTimeout(() => openGroupSheet(group.id), 600); });
+    lbl.addEventListener('pointerup',   () => clearTimeout(t2));
+    lbl.addEventListener('pointermove', () => clearTimeout(t2));
+    world.appendChild(lbl);
+  });
+  // 엣지 라벨 위치 업데이트
   world.querySelectorAll('.graph-edge-label').forEach((lbl, i) => {
     const edge = edges[i];
     if (!edge) return;
