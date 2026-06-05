@@ -1902,7 +1902,7 @@ body { background:var(--surface); }
     <!-- 색상칩 (항상 표시, 노드 아래) -->
     <div style="display:flex;align-items:center;padding:6px 15px 12px;flex-shrink:0;position:relative;">
       <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;justify-content:center;flex:1;"></div>
-      <button id="colorTargetToggleBtn" onclick="setColorTarget(colorTarget===1?2:1)"
+      <button id="colorTargetToggleBtn" onclick="toggleColorTarget()"
         style="display:none;position:absolute;right:15px;font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;flex-shrink:0;">1</button>
     </div>
 
@@ -4362,9 +4362,12 @@ function renderRelationDir2() {
 }
 
 let colorTarget = 1; // 1 또는 2
+window.colorTarget = colorTarget;
+function toggleColorTarget() { setColorTarget(colorTarget === 1 ? 2 : 1); }
 
 function setColorTarget(n) {
   colorTarget = n;
+  window.colorTarget = n;
   const btn = document.getElementById('colorTargetToggleBtn');
   if (btn) {
     btn.textContent = n === 1 ? '1' : '2';
@@ -9666,6 +9669,7 @@ Object.assign(window, {
   saveEras,
   setRelationLineMode,
   setColorTarget,
+  toggleColorTarget,
   cycleRelationDir2,
   renderRelationDir2,
   saveItem,
