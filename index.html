@@ -3369,7 +3369,7 @@ function renderGraphView() {
   const NODE_IMG_OFFSET_Y = 11;
   const imgCenter = (pos) => ({ x: pos.x, y: pos.y - NODE_IMG_OFFSET_Y });
 
-  // ── 그룹 바운더리 (SVG path로, 선/화살촉보다 먼저 삽입) ──
+  // ── 그룹 바운더리 (오프셋 테두리선 방식) ──
   world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
   groups.forEach(group => {
     const pts = group.nodeIds
@@ -3378,23 +3378,29 @@ function renderGraphView() {
       .map(pos => imgCenter(pos));
     if (pts.length === 0) return;
 
-    const SW = (NODE_R + 20) * 2;  // stroke-width: 노드 반지름 + 패딩
-    let pathD = '';
-    if (pts.length === 1) {
-      pathD = `M ${pts[0].x} ${pts[0].y} L ${pts[0].x} ${pts[0].y}`;
-    } else {
-      const hull = convexHull(pts);
-      pathD = hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
-    }
+    const R = NODE_R + 15;
     const NS2 = 'http://www.w3.org/2000/svg';
     const grpG = document.createElementNS(NS2, 'g');
-    grpG.setAttribute('opacity', '0.55');
     grpG.dataset.groupId = group.id;
     const groupPath = document.createElementNS(NS2, 'path');
+    const color = group.color || '#A8D4AC';
+    let pathD = '';
+
+    if (pts.length === 1) {
+      pathD = `M ${pts[0].x - R} ${pts[0].y} a ${R} ${R} 0 1 0 ${R*2} 0 a ${R} ${R} 0 1 0 ${-R*2} 0`;
+    } else if (pts.length === 2) {
+      const ep = expandHull(pts, R);
+      pathD = roundedHullPath(ep, R);
+    } else {
+      const hull = convexHull(pts);
+      const ep = expandHull(hull, R);
+      pathD = roundedHullPath(ep, R);
+    }
+
     groupPath.setAttribute('d', pathD);
-    groupPath.setAttribute('fill', group.color || '#E8F4E8');
-    groupPath.setAttribute('stroke', group.color || '#E8F4E8');
-    groupPath.setAttribute('stroke-width', SW);
+    groupPath.setAttribute('fill', 'none');
+    groupPath.setAttribute('stroke', color);
+    groupPath.setAttribute('stroke-width', '2.5');
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
     grpG.appendChild(groupPath);
@@ -3402,15 +3408,21 @@ function renderGraphView() {
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
 
-    // 라벨 위치: 원본 노드들의 무게중심
+    // 라벨: 바운더리 상단 중앙에 box 형태
+    const topPt = pts.reduce((a, b) => a.y < b.y ? a : b);
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
     lbl.style.left = cx + 'px';
-    lbl.style.top  = cy + 'px';
-    lbl.style.color = darkenColor(group.color || '#E8F4E8');
+    lbl.style.top  = (topPt.y - R - 2) + 'px';
+    lbl.style.color = darkenColor(color);
+    lbl.style.background = 'var(--surface)';
+    lbl.style.border = '1.5px solid ' + color;
+    lbl.style.borderRadius = '6px';
+    lbl.style.padding = '2px 8px';
+    lbl.style.fontSize = '11px';
+    lbl.style.fontWeight = '600';
     lbl.dataset.groupId = group.id;
     let grpLabelTimer = null;
     lbl.addEventListener('pointerdown', e => {
@@ -3421,7 +3433,7 @@ function renderGraphView() {
     lbl.addEventListener('pointermove', () => clearTimeout(grpLabelTimer));
     world.appendChild(lbl);
   });
-  // SVG 관계선 + 라벨
+    // SVG 관계선 + 라벨
   edges.forEach(edge => {
     const fromPos = nodes[edge.from];
     const toPos   = nodes[edge.to];
@@ -3558,20 +3570,8 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
   const startY = e.clientY - pos.y;
   let moved = false;
 
-  // 길게 누르기 → 그룹 제외
-  const longPressTimer = setTimeout(() => {
-    if (moved) return;
-    const groups = getGraphGroups();
-    const belongGroup = groups.find(g => g.nodeIds.includes(personId));
-    if (belongGroup) {
-      openGroupConfirmSheet('exclude', personId, belongGroup.id,
-        `"${getPersonName(personId)}"을(를) "${belongGroup.name || '그룹'}"에서 제외`);
-    }
-  }, 600);
-
   function onMove(ev) {
     moved = true;
-    clearTimeout(longPressTimer);
     const newX = ev.clientX - startX;
     const newY = ev.clientY - startY;
     pos.x = newX; pos.y = newY;
@@ -3582,7 +3582,6 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
     updateGraphEdges();
   }
   function onUp() {
-    clearTimeout(longPressTimer);
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
     if (moved && PROJECT_ID) {
@@ -3591,23 +3590,7 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
         const order = (STORY_DB[PROJECT_ID] || []).findIndex(i => i.id === personId);
         ref.item(PROJECT_ID, personId).set({ ...movedItem, _order: order });
       }
-      // 드롭 위치가 그룹 위인지 확인
-      const groups = getGraphGroups();
-      const nodes = getGraphNodes();
-      const belongGroup = groups.find(g => g.nodeIds.includes(personId));
-      const NODE_IMG_OFFSET_Y = 11;
-      const dropX = pos.x, dropY = pos.y - NODE_IMG_OFFSET_Y;
-      for (const group of groups) {
-        if (belongGroup && belongGroup.id === group.id) continue;
-        const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean)
-          .map(p => ({ x: p.x, y: p.y - NODE_IMG_OFFSET_Y }));
-        if (pts.length === 0) continue;
-        if (isPointInGroupBounds(dropX, dropY, pts, 44)) {
-          openGroupConfirmSheet('include', personId, group.id,
-            `"${getPersonName(personId)}"을(를) "${group.name || '그룹'}"에 포함`);
-          return;
-        }
-      }
+
     }
     if (!moved) onGraphNodeTap(personId);
   }
@@ -3615,12 +3598,7 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
   canvas.addEventListener('pointerup', onUp);
 }
 
-// 포인트가 그룹 바운더리 안에 있는지 간단 체크 (AABB)
-function isPointInGroupBounds(x, y, pts, pad) {
-  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
-  return x >= Math.min(...xs) - pad && x <= Math.max(...xs) + pad &&
-         y >= Math.min(...ys) - pad && y <= Math.max(...ys) + pad;
-}
+
 
 function onGraphNodeTap(personId) {
   if (graphSelectedIds.includes(personId)) {
@@ -4067,31 +4045,34 @@ function updateGraphEdges() {
     if (edge.dir==='end' ||edge.dir==='both') drawArrow(x2,y2,x1,y1);
     if (edge.dir==='start'||edge.dir==='both') drawArrow(x1,y1,x2,y2);
   });
-  // 그룹 바운더리 path + 라벨 위치 업데이트
+  // 그룹 바운더리 + 라벨 업데이트
   const groups = getGraphGroups();
   svg.querySelectorAll('g[data-group-id], path[data-group-id]').forEach(el => el.remove());
   world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
   groups.forEach(group => {
-    const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean)
-      .map(pos => ic(pos));
+    const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean).map(pos => ic(pos));
     if (pts.length === 0) return;
-    const SW = (NODE_R + 20) * 2;  // stroke-width: 노드 반지름 + 패딩
-    let pathD = '';
-    if (pts.length === 1) {
-      pathD = `M ${pts[0].x} ${pts[0].y} L ${pts[0].x} ${pts[0].y}`;
-    } else {
-      const hull = convexHull(pts);
-      pathD = hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
-    }
+    const R = NODE_R + 15;
     const NS2 = 'http://www.w3.org/2000/svg';
     const grpG = document.createElementNS(NS2, 'g');
-    grpG.setAttribute('opacity', '0.55');
     grpG.dataset.groupId = group.id;
     const groupPath = document.createElementNS(NS2, 'path');
+    const color = group.color || '#A8D4AC';
+    let pathD = '';
+    if (pts.length === 1) {
+      pathD = `M ${pts[0].x - R} ${pts[0].y} a ${R} ${R} 0 1 0 ${R*2} 0 a ${R} ${R} 0 1 0 ${-R*2} 0`;
+    } else if (pts.length === 2) {
+      const ep = expandHull(pts, R);
+      pathD = roundedHullPath(ep, R);
+    } else {
+      const hull = convexHull(pts);
+      const ep = expandHull(hull, R);
+      pathD = roundedHullPath(ep, R);
+    }
     groupPath.setAttribute('d', pathD);
-    groupPath.setAttribute('fill', group.color || '#E8F4E8');
-    groupPath.setAttribute('stroke', group.color || '#E8F4E8');
-    groupPath.setAttribute('stroke-width', SW);
+    groupPath.setAttribute('fill', 'none');
+    groupPath.setAttribute('stroke', color);
+    groupPath.setAttribute('stroke-width', '2.5');
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
     grpG.appendChild(groupPath);
@@ -4099,14 +4080,20 @@ function updateGraphEdges() {
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
     // 라벨
+    const topPt = pts.reduce((a, b) => a.y < b.y ? a : b);
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
-    const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
     lbl.style.left = cx + 'px';
-    lbl.style.top  = cy + 'px';
-    lbl.style.color = darkenColor(group.color || '#E8F4E8');
+    lbl.style.top  = (topPt.y - R - 2) + 'px';
+    lbl.style.color = darkenColor(color);
+    lbl.style.background = 'var(--surface)';
+    lbl.style.border = '1.5px solid ' + color;
+    lbl.style.borderRadius = '6px';
+    lbl.style.padding = '2px 8px';
+    lbl.style.fontSize = '11px';
+    lbl.style.fontWeight = '600';
     lbl.dataset.groupId = group.id;
     let t2 = null;
     lbl.addEventListener('pointerdown', e => { e.stopPropagation(); t2 = setTimeout(() => openGroupSheet(group.id), 600); });
@@ -4114,7 +4101,7 @@ function updateGraphEdges() {
     lbl.addEventListener('pointermove', () => clearTimeout(t2));
     world.appendChild(lbl);
   });
-  // 엣지 라벨 위치 업데이트
+    // 엣지 라벨 위치 업데이트
   world.querySelectorAll('.graph-edge-label').forEach((lbl, i) => {
     const edge = edges[i];
     if (!edge) return;
