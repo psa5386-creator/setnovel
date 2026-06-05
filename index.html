@@ -4518,7 +4518,8 @@ function makePlotPartEl(part, groupId) {
   titleInput.type = 'text';
   titleInput.value = part.title;
   titleInput.placeholder = '파트 제목...';
-  titleInput.readOnly = true;
+  titleInput.readOnly = false;
+  titleInput.style.pointerEvents = 'none';
   titleInput.onchange = () => { part.title = titleInput.value; };
 
   let partEditing = false;
@@ -4527,18 +4528,20 @@ function makePlotPartEl(part, groupId) {
   const exitEditing = () => {
     partEditing = false;
     titleInput.classList.remove('editing');
-    titleInput.readOnly = true;
+    titleInput.style.pointerEvents = 'none';
     part.title = titleInput.value;
     toggle.innerHTML = `<svg viewBox="-20 -20 296 296"><path d="M115.78,236L230.77,138.25c5.93,-5.04,5.93,-14.21,0,-19.25L115.78,21.26" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/></svg>`;
     toggle.style.color = '';
   };
 
-  titleInput.addEventListener('click', e => {
+  // header 클릭으로 편집 진입 (pointer-events:none이라 input에 직접 클릭 안 됨)
+  header.addEventListener('click', e => {
     e.stopPropagation();
+    if (e.target.closest('.plot-part-toggle') || e.target.closest('button')) return;
     if (!partEditing) {
       partEditing = true;
       titleInput.classList.add('editing');
-      titleInput.readOnly = false;
+      titleInput.style.pointerEvents = 'auto';
       titleInput.focus();
       toggle.innerHTML = `<svg viewBox="0 0 256 256"><line x1="20" y1="20" x2="236" y2="236" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/><line x1="20" y1="236" x2="236" y2="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/></svg>`;
       toggle.style.color = 'var(--red)';
@@ -4852,9 +4855,9 @@ function attachPlotLongPress(el, id, type, name) {
     // textarea가 편집 중이면 드래그 막기 (pointer-events:auto 상태)
     const ta = e.target.closest('textarea');
     if (ta && ta.style.pointerEvents === 'auto') return;
-    // input은 readOnly일 때만 드래그 허용
+    // input은 편집 중(pointer-events:auto)이면 드래그 막기
     const inp = e.target.closest('input');
-    if (inp && !inp.readOnly) return;
+    if (inp && inp.style.pointerEvents === 'auto') return;
     const touch = e.touches ? e.touches[0] : e;
     timer = setTimeout(() => {
       e.preventDefault();
