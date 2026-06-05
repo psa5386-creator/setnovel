@@ -4096,6 +4096,10 @@ function renderGroupPreview() {
     const cx = svgRect.left - wrapRect.left + lblX * scaleX;
     const cy = svgRect.top  - wrapRect.top  + lblY * scaleY;
     inp.style.cssText = `position:absolute;border:none;outline:none;font-family:inherit;font-size:12px;font-weight:600;text-align:center;border-radius:4px;padding:3px 8px;box-sizing:border-box;background:${color};color:${darkenColor(color)};width:80px;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);z-index:10;`;
+    // placeholder 색상 진하게
+    const style = document.createElement('style');
+    style.textContent = `#groupLabelInput::placeholder { color:${darkenColor(color)}; opacity:0.6; }`;
+    document.head.appendChild(style);
     wrap.appendChild(inp);
     inp.focus();
     inp.select();
@@ -4210,7 +4214,7 @@ function execGroupConfirm() {
 // ════════════════════════════════════════
 //  관계 추가 바텀시트
 // ════════════════════════════════════════
-const RELATION_COLORS = ['#2C2825','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
+const RELATION_COLORS = ['#6B6B6B','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
 let relationSheetData = { fromId: null, toId: null, label1: '', dir1: 'none', color1: '#2C2825', label2: '', dir2: 'none', color2: '#2C2825', label3: '', dir3: 'none', color3: '#2C2825', editEdgeId: null };
 let relationLineMode = 1; // 1 or 2
 
