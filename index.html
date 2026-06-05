@@ -3537,7 +3537,7 @@ function renderGraphView() {
         // 선2(isLabel2=true):  왼쪽방향→아래, 오른쪽방향→위  수직→오른쪽(offset>0)
         let lblBelow;
         if (isVertical) {
-          lblBelow = isLabel2; // 선1→왼(below=false), 선2→오(below=true) - positionEdgeLabel이 below로 부호 반전
+          lblBelow = false; // positionEdgeLabel이 fc.x 기준으로 방향 결정
         } else {
           lblBelow = isLabel2 ? !goingLeft : goingLeft;
         }
@@ -3937,45 +3937,96 @@ function renderGroupPreview() {
     svg.appendChild(iconG);
   });
 
-  // 라벨 입력창 — foreignObject로 SVG viewBox 좌표계에 직접 배치
+  // 라벨 — rect + text, 탭하면 input 편집
   const lblX = (pts[0].x + pts[1].x) / 2;
-  const lblY = pts[0].y - PAD; // 바운더리 선 최상단 중심
-  const existingVal = svg._pendingLabel !== undefined ? svg._pendingLabel : (svg._labelInput && svg._labelInput.value) || '';
-  const foW = Math.max(80, (existingVal || '그룹명').length * 10 + 24);
-  const foH = 28;
-  const fo = document.createElementNS(NS, 'foreignObject');
-  fo.setAttribute('x', lblX - foW / 2);
-  fo.setAttribute('y', lblY - foH / 2);
-  fo.setAttribute('width', foW);
-  fo.setAttribute('height', foH);
-  fo.setAttribute('overflow', 'visible');
-  const inp = document.createElement('input');
-  inp.id = 'groupLabelInput';
-  inp.placeholder = '그룹명';
-  inp.autocomplete = 'off';
-  inp.value = existingVal;
-  inp.style.cssText = `width:100%;height:100%;border:none;outline:none;font-family:inherit;font-size:14px;font-weight:600;text-align:center;border-radius:6px;padding:2px 8px;box-sizing:border-box;background:${color};color:${darkenColor(color)};`;
-  inp.oninput = onGroupLabelInput;
-  fo.appendChild(inp);
-  svg.appendChild(fo);
-  svg._labelInput = inp;
+  const lblY = pts[0].y - PAD;
+  const existingVal = svg._pendingLabel !== undefined ? svg._pendingLabel : (svg._currentLabel || '');
+  svg._currentLabel = existingVal;
+  svg._pendingLabel = undefined;
+
+  function renderLabelText(val) {
+    svg.querySelectorAll('.grp-lbl-rect, .grp-lbl-text').forEach(el => el.remove());
+    const displayVal = val || '그룹명';
+    const fontSize = 12;
+    const padX = 8, padY = 3;
+    // 글자 너비 추정 (한글 약 8px, 영문 약 6px per char at 12px)
+    const charW = fontSize * 0.72;
+    const textW = displayVal.length * charW;
+    const rectW = textW + padX * 2;
+    const rectH = fontSize + padY * 2;
+
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('x', lblX - rectW / 2);
+    rect.setAttribute('y', lblY - rectH / 2);
+    rect.setAttribute('width', rectW);
+    rect.setAttribute('height', rectH);
+    rect.setAttribute('rx', '4');
+    rect.setAttribute('fill', color);
+    rect.classList.add('grp-lbl-rect');
+
+    const text = document.createElementNS(NS, 'text');
+    text.setAttribute('x', lblX);
+    text.setAttribute('y', lblY + fontSize * 0.35);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('font-size', fontSize);
+    text.setAttribute('font-weight', '600');
+    text.setAttribute('font-family', 'Pretendard, sans-serif');
+    text.setAttribute('fill', darkenColor(color));
+    text.classList.add('grp-lbl-text');
+    text.style.pointerEvents = 'none';
+    text.textContent = displayVal;
+
+    svg.appendChild(rect);
+    svg.appendChild(text);
+
+    // 탭 → input 편집 진입
+    rect.style.cursor = 'text';
+    rect.addEventListener('click', () => startLabelEdit());
+  }
+
+  function startLabelEdit() {
+    // 기존 rect/text 숨기기
+    svg.querySelectorAll('.grp-lbl-rect, .grp-lbl-text').forEach(el => el.style.visibility = 'hidden');
+    const val = svg._currentLabel || '';
+    // wrap에 input 올리기
+    const wrap = svg.parentElement;
+    const svgRect = svg.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const scaleX = svgRect.width / 300;
+    const scaleY = svgRect.height / 140;
+    const inp = document.createElement('input');
+    inp.id = 'groupLabelInput';
+    inp.value = val;
+    inp.placeholder = '그룹명';
+    inp.autocomplete = 'off';
+    const cx = svgRect.left - wrapRect.left + lblX * scaleX;
+    const cy = svgRect.top  - wrapRect.top  + lblY * scaleY;
+    inp.style.cssText = `position:absolute;border:none;outline:none;font-family:inherit;font-size:12px;font-weight:600;text-align:center;border-radius:4px;padding:3px 8px;box-sizing:border-box;background:${color};color:${darkenColor(color)};width:80px;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);z-index:10;`;
+    wrap.appendChild(inp);
+    inp.focus();
+    inp.select();
+    svg._labelInput = inp;
+
+    inp.oninput = () => {
+      svg._currentLabel = inp.value;
+      // 너비를 텍스트에 맞게
+      const len = Math.max(3, (inp.value || '그룹명').length);
+      inp.style.width = (len * 8.6 + 16) + 'px';
+    };
+    inp.onblur = () => {
+      svg._currentLabel = inp.value;
+      inp.remove();
+      svg._labelInput = null;
+      svg.querySelectorAll('.grp-lbl-rect, .grp-lbl-text').forEach(el => el.style.visibility = '');
+      renderLabelText(svg._currentLabel);
+    };
+  }
+
+  renderLabelText(existingVal);
+  svg._startLabelEdit = startLabelEdit;
 }
 
-function onGroupLabelInput() {
-  const inp = document.getElementById('groupLabelInput');
-  if (!inp) return;
-  const color = groupSheetData.color || '#72B878';
-  const name = inp.value || '';
-  const foW = Math.max(80, (name || '그룹명').length * 10 + 24);
-  const fo = inp.closest('foreignObject');
-  if (fo) {
-    const lblX = 150; // pts 중심 x (75+225)/2
-    fo.setAttribute('width', foW);
-    fo.setAttribute('x', lblX - foW / 2);
-  }
-  inp.style.background = color;
-  inp.style.color = darkenColor(color);
-}
+function onGroupLabelInput() {} // rect+text 방식으로 대체됨
 
 function renderGroupColors() {
   const row = document.getElementById('groupColorRow');
@@ -3995,8 +4046,8 @@ function renderGroupColors() {
 
 function saveGroupSheet() {
   const svgEl = document.getElementById('groupPreviewSvg');
-  const inp = svgEl?._labelInput || document.getElementById('groupLabelInput');
-  const name = (inp ? inp.value : '').trim();
+  const inp = svgEl?._labelInput;
+  const name = (inp ? inp.value : (svgEl?._currentLabel || '')).trim();
   const { nodeIds, color, editGroupId } = groupSheetData;
   const groups = getGraphGroups();
 
@@ -4246,8 +4297,12 @@ function positionEdgeLabel(lbl, fc, tc, lblBelow = false) {
   // ny > 0 이면 화면 아래 방향 → 반전
   if (ny > 0) { nx = -nx; ny = -ny; }
 
-  // 수직선 예외 (dx ≈ 0): 왼쪽으로
-  if (Math.abs(dx) < 1) { nx = -1; ny = 0; }
+  // 수직선 예외 (dx ≈ 0): 선이 중심(mx)의 오른쪽이면 라벨도 오른쪽, 왼쪽이면 왼쪽
+  if (Math.abs(dx) < 1) {
+    // fc.x가 중심선보다 오른쪽이면 nx=+1(오른쪽), 왼쪽이면 nx=-1(왼쪽)
+    nx = fc.x >= mx ? 1 : -1;
+    ny = 0;
+  }
 
   // lblBelow: 선 아래쪽에 배치 (선2 라벨)
   const sign = lblBelow ? -1 : 1;
@@ -4406,7 +4461,7 @@ function updateGraphEdges() {
     const goingLeftE = Math.abs(angleE) > Math.PI / 2;
     let lblBelow;
     if (isVerticalE) {
-      lblBelow = isLabel2;
+      lblBelow = false; // positionEdgeLabel이 fc.x 기준으로 방향 결정
     } else {
       lblBelow = isLabel2 ? !goingLeftE : goingLeftE;
     }
