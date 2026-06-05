@@ -1154,7 +1154,7 @@ body { background:var(--surface); }
   overflow:hidden; text-overflow:ellipsis; text-align:center;
 }
 .graph-node-add {
-  position:absolute; top:0px; right:-14px;
+  position:absolute; top:-14px; right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
@@ -1163,13 +1163,14 @@ body { background:var(--surface); }
 }
 .graph-node-add.visible { display:flex; }
 .graph-node-grp {
-  position:absolute; bottom:calc(100% - 50px); right:-14px;
+  position:absolute; top:50px; right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
   cursor:pointer; color:var(--accent-green);
 }
 .graph-node-grp.visible { display:flex; }
+.graph-node-grp.with2 { right:-46px; }
 .graph-node-grp svg { width:18px; height:18px; stroke:var(--accent-green); fill:none; stroke-width:2.5; }
 .graph-group-label {
   position:absolute; pointer-events:auto; cursor:default;
@@ -3384,17 +3385,21 @@ function renderGraphView() {
       const hull = convexHull(pts);
       pathD = hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
     }
-    const groupPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const NS2 = 'http://www.w3.org/2000/svg';
+    const grpG = document.createElementNS(NS2, 'g');
+    grpG.setAttribute('opacity', '0.35');
+    grpG.dataset.groupId = group.id;
+    const groupPath = document.createElementNS(NS2, 'path');
     groupPath.setAttribute('d', pathD);
     groupPath.setAttribute('fill', group.color || '#E8F4E8');
     groupPath.setAttribute('stroke', group.color || '#E8F4E8');
     groupPath.setAttribute('stroke-width', SW);
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
-    groupPath.dataset.groupId = group.id;
+    grpG.appendChild(groupPath);
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
-    if (firstNonDefs) svg.insertBefore(groupPath, firstNonDefs);
-    else svg.appendChild(groupPath);
+    if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
+    else svg.appendChild(grpG);
 
     // 라벨 위치: 원본 노드들의 무게중심
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
@@ -3521,12 +3526,7 @@ function renderGraphView() {
     const grpBtn = document.createElement('div');
     const isGrpWith2 = graphSelectedIds.length === 2 && isLast;
     const isGrpAlone = graphSelectedIds.length >= 3 && isLast;
-    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '');
-    // 2개 선택 시: + 아래에 / 3개+ 선택 시: + 위치와 동일
-    grpBtn.style.top = 'auto';
-    grpBtn.style.bottom = 'calc(100% - 50px)'; // imgWrap 하단 부근
-    grpBtn.style.right = '-14px';
-    if (isGrpWith2) { grpBtn.style.right = '-46px'; }
+    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '') + (isGrpWith2 ? ' with2' : '');
     grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -4068,7 +4068,7 @@ function updateGraphEdges() {
   });
   // 그룹 바운더리 path + 라벨 위치 업데이트
   const groups = getGraphGroups();
-  svg.querySelectorAll('path[data-group-id]').forEach(el => el.remove());
+  svg.querySelectorAll('g[data-group-id], path[data-group-id]').forEach(el => el.remove());
   world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
   groups.forEach(group => {
     const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean)
@@ -4082,17 +4082,21 @@ function updateGraphEdges() {
       const hull = convexHull(pts);
       pathD = hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
     }
-    const groupPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const NS2 = 'http://www.w3.org/2000/svg';
+    const grpG = document.createElementNS(NS2, 'g');
+    grpG.setAttribute('opacity', '0.35');
+    grpG.dataset.groupId = group.id;
+    const groupPath = document.createElementNS(NS2, 'path');
     groupPath.setAttribute('d', pathD);
     groupPath.setAttribute('fill', group.color || '#E8F4E8');
     groupPath.setAttribute('stroke', group.color || '#E8F4E8');
     groupPath.setAttribute('stroke-width', SW);
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
-    groupPath.dataset.groupId = group.id;
+    grpG.appendChild(groupPath);
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
-    if (firstNonDefs) svg.insertBefore(groupPath, firstNonDefs);
-    else svg.appendChild(groupPath);
+    if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
+    else svg.appendChild(grpG);
     // 라벨
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
     const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length;
