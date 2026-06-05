@@ -3516,6 +3516,7 @@ function renderGraphView() {
         lbl.style.cursor = 'pointer';
         lbl.dataset.edgeId = edge.id;
         if (isLabel2) lbl.dataset.label2 = '1';
+        const lfc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
         const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
         positionEdgeLabel(lbl, lfc, ltc, lblBelow);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
