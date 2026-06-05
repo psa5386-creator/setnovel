@@ -4500,8 +4500,10 @@ function positionEdgeLabel(lbl, fc, tc, lineOffset = 0, origFc = null, origTc = 
     fny = 0;
   }
 
-  // 라벨을 선의 바깥쪽에 배치: lineOffset<0→+법선, lineOffset>0→-법선, lineOffset=0→+법선(위)
-  const sign = lineOffset > 0 ? -1 : 1;
+  // 선2/3(lineOffset≠0): 법선 y성분이 아래면 offset 부호 반전 (선 위치와 동일한 dirSign 보정)
+  // 선1(lineOffset=0): 보정 없이 항상 +법선(위)
+  const dirSignLbl = (lineOffset !== 0 && fny > 0) ? -1 : 1;
+  const sign = (lineOffset > 0 ? -1 : 1) * dirSignLbl;
   const lx = mx + fnx * OFFSET * sign;
   const ly = my + fny * OFFSET * sign;
 
