@@ -4422,9 +4422,7 @@ let colorTarget = 1; // 1 또는 2
 window.colorTarget = colorTarget;
 function toggleColorTarget() {
   if (relationLineMode === 2) {
-    setColorTarget(colorTarget === 1 ? 2 : colorTarget === 2 ? 3 : 1);
-  } else {
-    setColorTarget(1); // 선1 모드는 항상 1
+    setColorTarget(colorTarget === 1 ? 2 : 1);
   }
 }
 
@@ -4444,21 +4442,24 @@ function setColorTarget(n) {
 function renderRelationColors() {
   const row = document.getElementById('relationColorRow');
   row.innerHTML = '';
-  const activeColor = colorTarget === 1 ? relationSheetData.color1 : (relationLineMode === 2 && colorTarget === 2 ? relationSheetData.color2 : relationSheetData.color3);
+  // 선2 모드: 버튼1=color2, 버튼2=color3 / 선1 모드: 버튼1=color1
+  let activeColor;
+  if (relationLineMode === 2) {
+    activeColor = colorTarget === 1 ? relationSheetData.color2 : relationSheetData.color3;
+  } else {
+    activeColor = relationSheetData.color1;
+  }
   RELATION_COLORS.forEach(c => {
     const chip = document.createElement('div');
     chip.className = 'relation-color-chip' + (c === activeColor ? ' selected' : '');
     chip.style.background = c;
     chip.onclick = () => {
-      if (colorTarget === 1) {
+      if (relationLineMode === 2) {
+        if (colorTarget === 1) { relationSheetData.color2 = c; renderRelationDir2(); }
+        else                   { relationSheetData.color3 = c; renderRelationDir3(); }
+      } else {
         relationSheetData.color1 = c;
         renderRelationDir();
-      } else if (colorTarget === 2) {
-        relationSheetData.color2 = c;
-        renderRelationDir2();
-      } else {
-        relationSheetData.color3 = c;
-        renderRelationDir3();
       }
       renderRelationColors();
     };
