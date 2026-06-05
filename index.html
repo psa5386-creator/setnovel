@@ -3552,7 +3552,7 @@ function renderGraphView() {
         } else {
           lblBelow = isLabel2 ? !goingLeft : goingLeft;
         }
-        positionEdgeLabel(lbl, lfc, ltc, lblBelow);
+        positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
         lbl.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
         world.appendChild(lbl);
@@ -4330,8 +4330,8 @@ function trimLineToNodes(fc, tc) {
 }
 
 // 라벨 위치/회전 계산
-// 항상 선 중심에서 수직 위쪽으로 오프셋, 수직선일 때는 왼쪽
-function positionEdgeLabel(lbl, fc, tc, lblBelow = false) {
+// centerX: 두 노드 중심의 x 평균 (오프셋 없는 진짜 중앙선)
+function positionEdgeLabel(lbl, fc, tc, lblBelow = false, centerX = null) {
   const OFFSET = 10; // 선 중심에서 라벨 센터까지 거리
   const mx = (fc.x + tc.x) / 2;
   const my = (fc.y + tc.y) / 2;
@@ -4346,10 +4346,10 @@ function positionEdgeLabel(lbl, fc, tc, lblBelow = false) {
   // ny > 0 이면 화면 아래 방향 → 반전
   if (ny > 0) { nx = -nx; ny = -ny; }
 
-  // 수직선 예외 (dx ≈ 0): 선이 중심(mx)의 오른쪽이면 라벨도 오른쪽, 왼쪽이면 왼쪽
+  // 수직선 예외 (dx ≈ 0): 진짜 중앙선(centerX) 기준으로 선이 오른쪽이면 라벨도 오른쪽
   if (Math.abs(dx) < 1) {
-    // fc.x가 중심선보다 오른쪽이면 nx=+1(오른쪽), 왼쪽이면 nx=-1(왼쪽)
-    nx = fc.x >= mx ? 1 : -1;
+    const ref = centerX !== null ? centerX : mx;
+    nx = fc.x >= ref ? 1 : -1;
     ny = 0;
   }
 
@@ -4514,7 +4514,7 @@ function updateGraphEdges() {
     } else {
       lblBelow = isLabel2 ? !goingLeftE : goingLeftE;
     }
-    positionEdgeLabel(lbl, lfc, ltc, lblBelow);
+    positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
   });
 }
 
