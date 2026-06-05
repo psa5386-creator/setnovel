@@ -3571,8 +3571,9 @@ function renderGraphView() {
     // 즉 |angle| > π/2 이면 "왼쪽 방향"
     const goingLeft = Math.abs(angle) > Math.PI / 2;
 
-    function renderOneLine(label, dir, color, offset, isLabel2 = false) {
-      if (!label && dir === 'none' && !color) return;
+    function renderOneLine(label, dir, color, offset, isLabel3 = false) {
+      // color 기본값: 선1 색상 또는 기본색
+      const strokeColor = color || edge.color1 || '#2C2825';
       const {x1, y1, x2, y2} = trimLineToNodes(
         {x: fc.x + nx*offset, y: fc.y + ny*offset},
         {x: tc.x + nx*offset, y: tc.y + ny*offset}
@@ -3580,7 +3581,7 @@ function renderGraphView() {
       const lineEl = document.createElementNS(NS, 'line');
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
-      lineEl.setAttribute('stroke', color || 'var(--accent)');
+      lineEl.setAttribute('stroke', strokeColor);
       lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
@@ -3601,7 +3602,7 @@ function renderGraphView() {
         const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
-        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || 'var(--accent)');
+        pl.setAttribute('fill','none'); pl.setAttribute('stroke', strokeColor);
         pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
@@ -3615,17 +3616,16 @@ function renderGraphView() {
         lbl.textContent = label;
         lbl.style.cursor = 'pointer';
         lbl.dataset.edgeId = edge.id;
-        if (isLabel2) lbl.dataset.label2 = '1';
+        // isLabel3: 선3(offset>0 측)은 선2와 반대쪽에 라벨 배치
+        if (isLabel3) lbl.dataset.label2 = '1';
         const lfc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
         const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
-        // 라벨 면 결정: 선 방향과 isLabel2 조합
-        // 선1(isLabel2=false): 왼쪽방향→위, 오른쪽방향→아래  수직→왼쪽(offset<0)
-        // 선2(isLabel2=true):  왼쪽방향→아래, 오른쪽방향→위  수직→오른쪽(offset>0)
         let lblBelow;
         if (isVertical) {
-          lblBelow = false; // positionEdgeLabel이 fc.x 기준으로 방향 결정
+          lblBelow = false;
         } else {
-          lblBelow = isLabel2 ? !goingLeft : goingLeft;
+          // offset>0(선3) → isLabel3=true → 선2와 반대방향
+          lblBelow = isLabel3 ? !goingLeft : goingLeft;
         }
         positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
@@ -3642,9 +3642,9 @@ function renderGraphView() {
     renderOneLine(edge.label1, edge.dir1, edge.color1, offset1, false);
     // 선2/선3
     if (hasLine2) {
-      renderOneLine(edge.label2, edge.dir2, edge.color2 || edge.color1, 7.5, true);
+      renderOneLine(edge.label2, edge.dir2, edge.color2, 7.5, false);
       if (edge.label3 || edge.dir3 !== 'none') {
-        renderOneLine(edge.label3, edge.dir3, edge.color3 || edge.color1, 7.5, true);
+        renderOneLine(edge.label3, edge.dir3, edge.color3, -7.5, true);
       }
     }
   });
@@ -4538,7 +4538,7 @@ function updateGraphEdges() {
       const lineEl = document.createElementNS(NS, 'line');
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
-      lineEl.setAttribute('stroke', color || 'var(--accent)');
+      lineEl.setAttribute('stroke', color || '#2C2825');
       lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
@@ -4548,7 +4548,7 @@ function updateGraphEdges() {
         const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
-        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || 'var(--accent)');
+        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || '#2C2825');
         pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
@@ -4557,11 +4557,11 @@ function updateGraphEdges() {
       if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
     }
     const hasLine2e = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    drawOneLine(edge.dir1, edge.color1, hasLine2e ? -7.5 : 0);
+    drawOneLine(edge.dir1, edge.color1 || '#2C2825', hasLine2e ? -7.5 : 0);
     if (hasLine2e) {
-      drawOneLine(edge.dir2, edge.color2 || edge.color1, 7.5);
+      drawOneLine(edge.dir2, edge.color2 || '#2C2825', 7.5);
       if (edge.label3 || edge.dir3 !== 'none') {
-        drawOneLine(edge.dir3, edge.color3 || edge.color1, 7.5);
+        drawOneLine(edge.dir3, edge.color3 || '#2C2825', -7.5);
       }
     }
   });
@@ -4648,9 +4648,9 @@ function updateGraphEdges() {
     const fc = ic(f), tc = ic(t);
     const dxe = tc.x-fc.x, dye = tc.y-fc.y, dle = Math.sqrt(dxe*dxe+dye*dye)||1;
     const nxe = -dye/dle, nye = dxe/dle;
-    const isLabel2 = lbl.dataset.label2 === '1';
+    const isLabel3 = lbl.dataset.label2 === '1'; // data-label2='1'이 선3 라벨
     const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    const offset = isLabel2 ? 7.5 : (edgeHasLine2 ? -7.5 : 0);
+    const offset = isLabel3 ? -7.5 : (edgeHasLine2 ? 7.5 : 0);
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
     const angleE = Math.atan2(dye, dxe);
@@ -4658,9 +4658,9 @@ function updateGraphEdges() {
     const goingLeftE = Math.abs(angleE) > Math.PI / 2;
     let lblBelow;
     if (isVerticalE) {
-      lblBelow = false; // positionEdgeLabel이 fc.x 기준으로 방향 결정
+      lblBelow = false;
     } else {
-      lblBelow = isLabel2 ? !goingLeftE : goingLeftE;
+      lblBelow = isLabel3 ? !goingLeftE : goingLeftE;
     }
     positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
   });
