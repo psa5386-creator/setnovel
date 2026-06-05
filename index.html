@@ -3636,17 +3636,19 @@ function renderGraphView() {
 
     // 선2 존재 여부에 따라 offset 결정
     const hasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    const offset1 = hasLine2 ? -7.5 : 0;
+    // 수평 기준: nx방향 양수=아래, 음수=위
+    // 선1 단독: offset=0, 라벨 위(isLabel3=false)
+    // 2선모드: 선1=+7.5(아래), 선2=-7.5(위), 선3=+7.5(아래)
+    const offset1 = hasLine2 ? 7.5 : 0;
 
-    // 선1: offset1, 라벨 규칙 A (isLabel3=false)
-    renderOneLine(edge.label1, edge.dir1, edge.color1, offset1, false);
-    // 선2/선3
+    // 선1: 단독=라벨위, 2선모드=라벨아래(isLabel3=true)
+    renderOneLine(edge.label1, edge.dir1, edge.color1, offset1, hasLine2);
     if (hasLine2) {
-      // 선2: offset +7.5, 라벨 규칙 A (선1과 동일, isLabel3=false)
-      renderOneLine(edge.label2, edge.dir2, edge.color2, 7.5, false);
+      // 선2: offset -7.5(위), 라벨 위(isLabel3=false)
+      renderOneLine(edge.label2, edge.dir2, edge.color2, -7.5, false);
       if (edge.label3 || edge.dir3 !== 'none') {
-        // 선3: offset -7.5, 라벨 규칙 B (반대, isLabel3=true)
-        renderOneLine(edge.label3, edge.dir3, edge.color3, -7.5, true);
+        // 선3: offset +7.5(아래), 라벨 아래(isLabel3=true)
+        renderOneLine(edge.label3, edge.dir3, edge.color3, 7.5, true);
       }
     }
   });
@@ -4569,11 +4571,11 @@ function updateGraphEdges() {
       if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
     }
     const hasLine2e = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    drawOneLine(edge.dir1, edge.color1 || '#2C2825', hasLine2e ? -7.5 : 0);
+    drawOneLine(edge.dir1, edge.color1 || '#2C2825', hasLine2e ? 7.5 : 0);
     if (hasLine2e) {
-      drawOneLine(edge.dir2, edge.color2 || '#2C2825', 7.5);
+      drawOneLine(edge.dir2, edge.color2 || '#2C2825', -7.5);
       if (edge.label3 || edge.dir3 !== 'none') {
-        drawOneLine(edge.dir3, edge.color3 || '#2C2825', -7.5);
+        drawOneLine(edge.dir3, edge.color3 || '#2C2825', 7.5);
       }
     }
   });
@@ -4662,11 +4664,8 @@ function updateGraphEdges() {
     const nxe = -dye/dle, nye = dxe/dle;
     const isLabel3 = lbl.dataset.label2 === '1'; // data-label2='1'이 선3 라벨
     const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    // 선1: offset -7.5(2선모드) or 0, 선2: +7.5, 선3: -7.5
-    // isLabel3=true → 선3 → offset -7.5
-    // isLabel3=false + edgeHasLine2 → 선1또는선2 → dataset으로 구분 불가하므로 label2속성 없으면 선1/-7.5, 선2/+7.5
-    // 실제로는 선2 라벨은 data-label2 없음, 선3 라벨은 data-label2='1'
-    const offset = isLabel3 ? -7.5 : (edgeHasLine2 ? 7.5 : 0);
+    // 선3(isLabel3=true): +7.5, 선2(isLabel3=false, edgeHasLine2): -7.5, 선1단독: 0
+    const offset = isLabel3 ? 7.5 : (edgeHasLine2 ? -7.5 : 0);
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
     const angleE = Math.atan2(dye, dxe);
