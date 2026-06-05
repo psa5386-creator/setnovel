@@ -3403,40 +3403,48 @@ function renderGraphView() {
     const NS2 = 'http://www.w3.org/2000/svg';
     const grpG = document.createElementNS(NS2, 'g');
     grpG.dataset.groupId = group.id;
-    const groupPath = document.createElementNS(NS2, 'path');
     const color = group.color || '#A8D4AC';
-    let pathD = '';
 
-    if (pts.length === 1) {
-      pathD = `M ${pts[0].x - R} ${pts[0].y} a ${R} ${R} 0 1 0 ${R*2} 0 a ${R} ${R} 0 1 0 ${-R*2} 0`;
-    } else if (pts.length === 2) {
-      const ep = expandHull(pts, R);
-      pathD = roundedHullPath(ep, R);
-    } else {
-      const hull = convexHull(pts);
-      const ep = expandHull(hull, R);
-      pathD = roundedHullPath(ep, R);
-    }
+    // hull path (원본 노드 중심 연결)
+    const hull = pts.length <= 2 ? pts : convexHull(pts);
+    const hullD = hull.length === 1
+      ? `M ${hull[0].x} ${hull[0].y}`
+      : hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
 
-    groupPath.setAttribute('d', pathD);
+    // stroke-width=R*2 로 오프셋 표현, stroke-linejoin/linecap=round 로 곡률 R 고정
+    const groupPath = document.createElementNS(NS2, 'path');
+    groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
-    groupPath.setAttribute('stroke-width', '2.5');
+    groupPath.setAttribute('stroke-width', R * 2);
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
+    groupPath.setAttribute('stroke-opacity', '1');
+    // 내부 채우기 없이 테두리만: paint-order로 stroke 아래에 fill 없음
     grpG.appendChild(groupPath);
+
+    // 안쪽을 배경색으로 덮어서 테두리선만 보이게
+    const innerPath = document.createElementNS(NS2, 'path');
+    innerPath.setAttribute('d', hullD);
+    innerPath.setAttribute('fill', 'none');
+    innerPath.setAttribute('stroke', 'var(--bg)');
+    innerPath.setAttribute('stroke-width', (R * 2) - 5);
+    innerPath.setAttribute('stroke-linejoin', 'round');
+    innerPath.setAttribute('stroke-linecap', 'round');
+    grpG.appendChild(innerPath);
+
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
 
-    // 라벨: 바운더리 상단 중앙에 box 형태
+    // 라벨: 가장 위쪽 노드 기준 상단
     const topPt = pts.reduce((a, b) => a.y < b.y ? a : b);
-    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cx2 = pts.reduce((s, p) => s + p.x, 0) / pts.length;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
-    lbl.style.left = cx + 'px';
-    lbl.style.top  = (topPt.y - R - 2) + 'px';
+    lbl.style.left = cx2 + 'px';
+    lbl.style.top  = (topPt.y - R - 4) + 'px';
     lbl.style.color = darkenColor(color);
     lbl.style.background = 'var(--surface)';
     lbl.style.border = '1.5px solid ' + color;
@@ -4092,37 +4100,48 @@ function updateGraphEdges() {
     const NS2 = 'http://www.w3.org/2000/svg';
     const grpG = document.createElementNS(NS2, 'g');
     grpG.dataset.groupId = group.id;
-    const groupPath = document.createElementNS(NS2, 'path');
     const color = group.color || '#A8D4AC';
-    let pathD = '';
-    if (pts.length === 1) {
-      pathD = `M ${pts[0].x - R} ${pts[0].y} a ${R} ${R} 0 1 0 ${R*2} 0 a ${R} ${R} 0 1 0 ${-R*2} 0`;
-    } else if (pts.length === 2) {
-      const ep = expandHull(pts, R);
-      pathD = roundedHullPath(ep, R);
-    } else {
-      const hull = convexHull(pts);
-      const ep = expandHull(hull, R);
-      pathD = roundedHullPath(ep, R);
-    }
-    groupPath.setAttribute('d', pathD);
+
+    // hull path (원본 노드 중심 연결)
+    const hull = pts.length <= 2 ? pts : convexHull(pts);
+    const hullD = hull.length === 1
+      ? `M ${hull[0].x} ${hull[0].y}`
+      : hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
+
+    // stroke-width=R*2 로 오프셋 표현, stroke-linejoin/linecap=round 로 곡률 R 고정
+    const groupPath = document.createElementNS(NS2, 'path');
+    groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
-    groupPath.setAttribute('stroke-width', '2.5');
+    groupPath.setAttribute('stroke-width', R * 2);
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
+    groupPath.setAttribute('stroke-opacity', '1');
+    // 내부 채우기 없이 테두리만: paint-order로 stroke 아래에 fill 없음
     grpG.appendChild(groupPath);
+
+    // 안쪽을 배경색으로 덮어서 테두리선만 보이게
+    const innerPath = document.createElementNS(NS2, 'path');
+    innerPath.setAttribute('d', hullD);
+    innerPath.setAttribute('fill', 'none');
+    innerPath.setAttribute('stroke', 'var(--bg)');
+    innerPath.setAttribute('stroke-width', (R * 2) - 5);
+    innerPath.setAttribute('stroke-linejoin', 'round');
+    innerPath.setAttribute('stroke-linecap', 'round');
+    grpG.appendChild(innerPath);
+
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
-    // 라벨
+
+    // 라벨: 가장 위쪽 노드 기준 상단
     const topPt = pts.reduce((a, b) => a.y < b.y ? a : b);
-    const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length;
+    const cx2 = pts.reduce((s, p) => s + p.x, 0) / pts.length;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
-    lbl.style.left = cx + 'px';
-    lbl.style.top  = (topPt.y - R - 2) + 'px';
+    lbl.style.left = cx2 + 'px';
+    lbl.style.top  = (topPt.y - R - 4) + 'px';
     lbl.style.color = darkenColor(color);
     lbl.style.background = 'var(--surface)';
     lbl.style.border = '1.5px solid ' + color;
