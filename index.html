@@ -1841,10 +1841,7 @@ body { background:var(--surface); }
         style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;">선 1</button>
       <button id="relationLineToggle2" onclick="setRelationLineMode(2)"
         style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;">선 2</button>
-      <div id="colorTargetBtns" style="display:none;gap:4px;margin-left:auto;flex-shrink:0;">
-        <button id="colorTarget1Btn" onclick="setColorTarget(1)" style="font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;">1</button>
-        <button id="colorTarget2Btn" onclick="setColorTarget(2)" style="font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;">2</button>
-      </div>
+      <div id="colorTargetBtns" style="display:none;"><!-- 통합버튼으로 대체 --></div>
     </div>
 
     <!-- 인물 + 관계 입력 행 -->
@@ -1903,8 +1900,10 @@ body { background:var(--surface); }
     </div>
 
     <!-- 색상칩 (항상 표시, 노드 아래) -->
-    <div style="display:flex;justify-content:center;padding:6px 15px 12px;flex-shrink:0;">
-      <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;justify-content:center;"></div>
+    <div style="display:flex;align-items:center;padding:6px 15px 12px;flex-shrink:0;position:relative;">
+      <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;justify-content:center;flex:1;"></div>
+      <button id="colorTargetToggleBtn" onclick="setColorTarget(colorTarget===1?2:1)"
+        style="display:none;position:absolute;right:15px;font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;flex-shrink:0;">1</button>
     </div>
 
   </div>
@@ -4274,7 +4273,9 @@ function setRelationLineMode(mode) {
   const isTwo = mode === 2;
 
   const colorBtns = document.getElementById('colorTargetBtns');
-  if (colorBtns) colorBtns.style.display = isTwo ? 'flex' : 'none';
+  if (colorBtns) colorBtns.style.display = 'none'; // 통합버튼으로 대체
+  const toggleBtn = document.getElementById('colorTargetToggleBtn');
+  if (toggleBtn) toggleBtn.style.display = isTwo ? 'block' : 'none';
 
   row1.style.display = isTwo ? 'none' : 'flex';
   row2.style.display = isTwo ? 'flex' : 'none';
@@ -4354,17 +4355,12 @@ let colorTarget = 1; // 1 또는 2
 
 function setColorTarget(n) {
   colorTarget = n;
-  const btn1 = document.getElementById('colorTarget1Btn');
-  const btn2 = document.getElementById('colorTarget2Btn');
-  if (btn1) {
-    btn1.style.background = n === 1 ? 'var(--accent-green)' : 'none';
-    btn1.style.borderColor = n === 1 ? 'var(--accent-green)' : 'var(--border)';
-    btn1.style.color = n === 1 ? '#fff' : 'var(--text-secondary)';
-  }
-  if (btn2) {
-    btn2.style.background = n === 2 ? 'var(--accent-green)' : 'none';
-    btn2.style.borderColor = n === 2 ? 'var(--accent-green)' : 'var(--border)';
-    btn2.style.color = n === 2 ? '#fff' : 'var(--text-secondary)';
+  const btn = document.getElementById('colorTargetToggleBtn');
+  if (btn) {
+    btn.textContent = n === 1 ? '1' : '2';
+    btn.style.background = 'var(--accent-green)';
+    btn.style.borderColor = 'var(--accent-green)';
+    btn.style.color = '#fff';
   }
   renderRelationColors();
 }
