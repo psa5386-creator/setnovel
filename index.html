@@ -1827,6 +1827,14 @@ body { background:var(--surface); }
       <button class="era-sheet-save" onclick="saveRelationSheet()">저장</button>
     </div>
 
+    <!-- 선 1/2 토글 -->
+    <div style="display:flex;align-items:center;padding:6px 15px 2px;gap:6px;">
+      <button id="relationLineToggle1" onclick="setRelationLineMode(1)"
+        style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;">선 1</button>
+      <button id="relationLineToggle2" onclick="setRelationLineMode(2)"
+        style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;">선 2</button>
+    </div>
+
     <!-- 인물 + 관계 입력 행 -->
     <div class="relation-person-row">
       <span class="relation-person-name" id="relationFromName">이름</span>
@@ -1839,14 +1847,17 @@ body { background:var(--surface); }
             <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
           </svg>
         </div>
-        <div class="relation-line-wrap" onclick="cycleRelationDir2()">
-          <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
-            <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-            <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-            <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-          </svg>
+        <!-- 선2 영역 -->
+        <div id="relation2Row" style="display:none;flex-direction:column;align-items:center;gap:0;">
+          <div class="relation-line-wrap" onclick="cycleRelationDir2()">
+            <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
+              <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            </svg>
+          </div>
+          <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
         </div>
-        <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
       </div>
       <span class="relation-person-name" id="relationToName">이름</span>
     </div>
@@ -1854,7 +1865,7 @@ body { background:var(--surface); }
     <!-- 색상 선택 -->
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 15px 12px;flex-shrink:0;">
       <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;flex:1;justify-content:center;"></div>
-      <div style="display:flex;gap:4px;flex-shrink:0;">
+      <div id="colorTargetBtns" style="display:none;gap:4px;flex-shrink:0;">
         <button id="colorTarget1Btn" onclick="setColorTarget(1)" style="font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;">1</button>
         <button id="colorTarget2Btn" onclick="setColorTarget(2)" style="font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;">2</button>
       </div>
@@ -4149,6 +4160,10 @@ function openRelationSheet(fromId, toId) {
   document.getElementById('relationLabelInput2').value    = existing?.label2 || '';
   document.getElementById('relationSheetTitle').textContent = existing ? '관계 수정' : '관계 추가';
 
+  // 선2 데이터 있으면 2선 모드, 없으면 1선 모드
+  const hasLine2 = existing && (existing.label2 || existing.dir2 !== 'none');
+  setRelationLineMode(hasLine2 ? 2 : 1);
+
   renderRelationDir();
   renderRelationDir2();
   colorTarget = 1;
@@ -4169,8 +4184,11 @@ function onRelationSheetOverlayClick(e) {
 function saveRelationSheet() {
   const edges = getGraphEdges();
   const label = document.getElementById('relationLabelInput').value.trim();
-  const label2 = document.getElementById('relationLabelInput2').value.trim();
-  const { fromId, toId, dir, color, editEdgeId, dir2, color2 } = relationSheetData;
+  const isTwo = relationLineMode === 2;
+  const label2 = isTwo ? document.getElementById('relationLabelInput2').value.trim() : '';
+  const { fromId, toId, dir, color, editEdgeId } = relationSheetData;
+  const dir2   = isTwo ? relationSheetData.dir2   : 'none';
+  const color2 = isTwo ? relationSheetData.color2 : '#2C2825';
 
   if (editEdgeId) {
     const edge = edges.find(e => e.id === editEdgeId);
@@ -4188,6 +4206,37 @@ function saveRelationSheet() {
 }
 
 // 선 방향 순환: none → end → start → both
+let relationLineMode = 1; // 1 or 2
+
+function setRelationLineMode(mode) {
+  relationLineMode = mode;
+  const row2 = document.getElementById('relation2Row');
+  const colorBtns = document.getElementById('colorTargetBtns');
+  const t1 = document.getElementById('relationLineToggle1');
+  const t2 = document.getElementById('relationLineToggle2');
+  const isTwo = mode === 2;
+
+  row2.style.display = isTwo ? 'flex' : 'none';
+  colorBtns.style.display = isTwo ? 'flex' : 'none';
+
+  t1.style.background   = !isTwo ? 'var(--accent-green)' : 'none';
+  t1.style.borderColor  = !isTwo ? 'var(--accent-green)' : 'var(--border)';
+  t1.style.color        = !isTwo ? '#fff' : 'var(--text-secondary)';
+  t2.style.background   = isTwo  ? 'var(--accent-green)' : 'none';
+  t2.style.borderColor  = isTwo  ? 'var(--accent-green)' : 'var(--border)';
+  t2.style.color        = isTwo  ? '#fff' : 'var(--text-secondary)';
+
+  // 1선 모드로 전환 시 선2 데이터 초기화
+  if (!isTwo) {
+    relationSheetData.label2 = '';
+    relationSheetData.dir2   = 'none';
+    relationSheetData.color2 = '#2C2825';
+    const inp2 = document.getElementById('relationLabelInput2');
+    if (inp2) inp2.value = '';
+    setColorTarget(1);
+  }
+}
+
 function cycleRelationDir() {
   const dirs = ['none', 'end', 'start', 'both'];
   const idx = dirs.indexOf(relationSheetData.dir);
