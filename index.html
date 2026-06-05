@@ -4430,8 +4430,13 @@ function positionEdgeLabel(lbl, fc, tc, lblBelow = false, centerX = null) {
 
   // 회전각: 글자 뒤집힘 방지 (-90~90도 범위로)
   let deg = angle * 180 / Math.PI;
-  if (deg > 90)  deg -= 180;
-  if (deg < -90) deg += 180;
+  if (Math.abs(dx) < 1) {
+    // 수직선: 항상 -90도로 고정 (텍스트 방향 통일)
+    deg = -90;
+  } else {
+    if (deg > 90)  deg -= 180;
+    if (deg < -90) deg += 180;
+  }
 
   lbl.style.left = lx + 'px';
   lbl.style.top  = ly + 'px';
