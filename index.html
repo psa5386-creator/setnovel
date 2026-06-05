@@ -3679,15 +3679,33 @@ function convexHull(pts) {
   return lower.concat(upper);
 }
 
-// ── Hull 확장 (무게중심 반대 방향으로 pad만큼) ──
+// ── Hull 확장 (Minkowski sum: 각 엣지를 법선으로 pad만큼 평행이동 후 교점) ──
 function expandHull(hull, pad) {
   if (hull.length === 0) return hull;
-  const cx = hull.reduce((s, p) => s + p.x, 0) / hull.length;
-  const cy = hull.reduce((s, p) => s + p.y, 0) / hull.length;
-  return hull.map(p => {
-    const dx = p.x - cx, dy = p.y - cy;
-    const d = Math.sqrt(dx*dx + dy*dy) || 1;
-    return { x: p.x + dx/d * pad, y: p.y + dy/d * pad };
+  if (hull.length === 1) return [{ x: hull[0].x, y: hull[0].y }];
+  const n = hull.length;
+  // 각 엣지를 바깥 법선 방향으로 pad만큼 평행이동
+  const edges = hull.map((p, i) => {
+    const q = hull[(i + 1) % n];
+    const dx = q.x - p.x, dy = q.y - p.y;
+    const l = Math.sqrt(dx*dx + dy*dy) || 1;
+    // 바깥 법선 (CCW hull 기준 우측이 바깥)
+    const nx = dy/l * pad, ny = -dx/l * pad;
+    return {
+      ax: p.x + nx, ay: p.y + ny,
+      bx: q.x + nx, by: q.y + ny,
+    };
+  });
+  // 인접 평행 엣지의 교점 = 새 꼭짓점
+  return edges.map((e, i) => {
+    const f = edges[(i - 1 + n) % n];
+    // 두 직선 교점: f(a→b) 와 e(a→b)
+    const dx1 = f.bx - f.ax, dy1 = f.by - f.ay;
+    const dx2 = e.bx - e.ax, dy2 = e.by - e.ay;
+    const denom = dx1 * dy2 - dy1 * dx2;
+    if (Math.abs(denom) < 1e-10) return { x: e.ax, y: e.ay }; // 평행 엣지
+    const t = ((e.ax - f.ax) * dy2 - (e.ay - f.ay) * dx2) / denom;
+    return { x: f.ax + dx1 * t, y: f.ay + dy1 * t };
   });
 }
 
