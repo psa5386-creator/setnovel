@@ -1078,8 +1078,16 @@ body { background:var(--surface); }
   position:absolute; inset:0;
   display:none; overflow:visible;
   background:var(--bg); touch-action:none;
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 150px 150px;
+  background-position: var(--grid-ox, 50%) var(--grid-oy, 50%);
 }
 #personGraphCanvas.active { display:block; }
+#graphCenterMark {
+  position:absolute; pointer-events:none;
+  transform:translate(-50%, -50%);
+  opacity:0.25;
+}
 #graphWorld {
   position:absolute; top:0; left:0;
   width:100%; height:100%;
@@ -1752,6 +1760,11 @@ body { background:var(--surface); }
     <!-- 관계도 캔버스 -->
     <div id="personGraphCanvas">
       <div id="graphWorld">
+        <!-- 중앙 마커 -->
+        <svg id="graphCenterMark" width="30" height="30" viewBox="0 0 30 30" style="left:0;top:0;">
+          <line x1="15" y1="3" x2="15" y2="27" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="3" y1="15" x2="27" y2="15" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
         <svg id="graphSvg">
           <defs id="graphSvgDefs"></defs>
         </svg>
@@ -3250,6 +3263,7 @@ function setPersonView(view) {
   if (view === 'graph') {
     listBody.style.display = 'none';
     canvas.classList.add('active');
+    initGraphCenter();
     renderGraphView();
     initGraphCanvasGestures();
     applyGraphTransform();
@@ -3263,16 +3277,40 @@ function setPersonView(view) {
 //  관계도 캔버스 핀치줌 + 패닝
 // ════════════════════════════════════════
 let graphTransform = { scale: 1, tx: 0, ty: 0 };
+let graphCenterInitialized = false;
+
+function initGraphCenter() {
+  const canvas = document.getElementById('personGraphCanvas');
+  if (!canvas || graphCenterInitialized) return;
+  const cx = canvas.clientWidth;
+  const cy = canvas.clientHeight;
+  if (!cx || !cy) return;
+  graphTransform.tx = cx / 2;
+  graphTransform.ty = cy / 2;
+  graphCenterInitialized = true;
+  applyGraphTransform();
+}
 
 function applyGraphTransform() {
   const world = document.getElementById('graphWorld');
   if (!world) return;
   const { scale, tx, ty } = graphTransform;
   world.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  // 그리드 배경 위치 동기화 (150px = GRAPH_GRID)
+  const canvas = document.getElementById('personGraphCanvas');
+  if (canvas) {
+    const gridX = ((tx % (150 * scale)) + 150 * scale) % (150 * scale);
+    const gridY = ((ty % (150 * scale)) + 150 * scale) % (150 * scale);
+    canvas.style.backgroundSize = `${150 * scale}px ${150 * scale}px`;
+    canvas.style.backgroundPosition = `${gridX}px ${gridY}px`;
+  }
 }
 
 function resetGraphTransform() {
-  graphTransform = { scale: 1, tx: 0, ty: 0 };
+  const canvas = document.getElementById('personGraphCanvas');
+  const cx = canvas ? canvas.clientWidth  / 2 : 0;
+  const cy = canvas ? canvas.clientHeight / 2 : 0;
+  graphTransform = { scale: 1, tx: cx, ty: cy };
   const world = document.getElementById('graphWorld');
   if (world) world.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
   applyGraphTransform();
@@ -3378,8 +3416,9 @@ function initGraphNode(personId) {
     const cx = canvas.clientWidth  || window.innerWidth;
     const cy = canvas.clientHeight || window.innerHeight;
     // 중앙 그리드셀부터 나선형으로 빈 셀 탐색
-    const startX = snapToGrid(cx / 2);
-    const startY = snapToGrid(cy / 2);
+    // (0,0) = graphWorld 원점(캔버스 중앙) 기준으로 배치
+    const startX = 0;
+    const startY = 0;
     let found = null;
     outer: for (let r = 0; r <= 10; r++) {
       for (let dx = -r; dx <= r; dx++) {
@@ -9577,6 +9616,7 @@ Object.assign(window, {
   initDB,
   initDetail,
   initDrag,
+  initGraphCenter,
   initGraphCanvasGestures,
   initGraphNode,
   initMapGestures,
