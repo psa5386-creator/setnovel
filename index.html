@@ -1124,8 +1124,9 @@ body { background:var(--surface); }
   position:absolute;
   font-size:11px; color:var(--text-secondary);
   background:none; padding:1px 5px; border-radius:4px;
-  pointer-events:none; white-space:nowrap;
+  pointer-events:auto; white-space:nowrap;
   transform-origin:center center;
+  cursor:pointer;
 }
 .graph-node {
   position:absolute;
@@ -3289,6 +3290,20 @@ function renderGraphView() {
     line.dataset.edgeId = edge.id;
     svg.appendChild(line);
 
+    // 투명 히트영역 (클릭 쉽게)
+    const hitLine = document.createElementNS(NS, 'line');
+    hitLine.setAttribute('x1', lx1); hitLine.setAttribute('y1', ly1);
+    hitLine.setAttribute('x2', lx2); hitLine.setAttribute('y2', ly2);
+    hitLine.setAttribute('stroke', 'transparent');
+    hitLine.setAttribute('stroke-width', '20');
+    hitLine.style.cursor = 'pointer';
+    hitLine.dataset.edgeId = edge.id;
+    hitLine.addEventListener('click', ev => {
+      ev.stopPropagation();
+      openRelationSheet(edge.from, edge.to);
+    });
+    svg.appendChild(hitLine);
+
     // 화살촉 직접 그리기
     function drawArrow(tx, ty, fx, fy) {
       const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
@@ -3303,18 +3318,19 @@ function renderGraphView() {
     if (edge.dir==='end' ||edge.dir==='both') drawArrow(lx2,ly2,lx1,ly1);
     if (edge.dir==='start'||edge.dir==='both') drawArrow(lx1,ly1,lx2,ly2);
 
-    if (edge.label) {
-      const lbl = document.createElement('div');
-      lbl.className = 'graph-edge-label';
-      lbl.textContent = edge.label;
-      positionEdgeLabel(lbl, fc, tc);
-      lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
-      lbl.addEventListener('click', ev => {
-        ev.stopPropagation();
-        openRelationSheet(edge.from, edge.to);
-      });
-      world.appendChild(lbl);
-    }
+    // 라벨 (없어도 클릭 영역으로 생성)
+    const lbl = document.createElement('div');
+    lbl.className = 'graph-edge-label';
+    lbl.textContent = edge.label || '';
+    lbl.style.cursor = 'pointer';
+    if (!edge.label) lbl.style.minWidth = '20px';
+    positionEdgeLabel(lbl, fc, tc);
+    lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
+    lbl.addEventListener('click', ev => {
+      ev.stopPropagation();
+      openRelationSheet(edge.from, edge.to);
+    });
+    world.appendChild(lbl);
   });
 
   // 노드
