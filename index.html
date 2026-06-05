@@ -3560,7 +3560,10 @@ function renderGraphView() {
     // 법선 방향 계산 (중앙선 기준 수직)
     const dx = tc.x - fc.x, dy = tc.y - fc.y;
     const dl = Math.sqrt(dx*dx + dy*dy) || 1;
-    const nx = -dy/dl, ny = dx/dl; // 법선 (위쪽)
+    const nx = -dy/dl, ny = dx/dl; // 법선
+
+    // ny > 0 이면 법선이 화면 아래 → offset 부호 반전해서 선2가 항상 시각적 위에 오게
+    const dirSign = ny <= 0 ? 1 : -1;
 
     // 선 각도 (from→to 방향)
     const angle = Math.atan2(dy, dx); // -π ~ π
@@ -3634,21 +3637,16 @@ function renderGraphView() {
       }
     }
 
-    // 선2 존재 여부에 따라 offset 결정
     const hasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    // 수평 기준: nx방향 양수=아래, 음수=위
-    // 선1 단독: offset=0, 라벨 위(isLabel3=false)
-    // 2선모드: 선1=+7.5(아래), 선2=-7.5(위), 선3=+7.5(아래)
-    const offset1 = hasLine2 ? 7.5 : 0;
 
-    // 선1: 단독=라벨위, 2선모드=라벨아래(isLabel3=true)
-    renderOneLine(edge.label1, edge.dir1, edge.color1, offset1, hasLine2);
-    if (hasLine2) {
-      // 선2: offset -7.5(위), 라벨 위(isLabel3=false)
-      renderOneLine(edge.label2, edge.dir2, edge.color2, -7.5, false);
+    if (!hasLine2) {
+      // 선1 모드: 선1만, offset=0
+      renderOneLine(edge.label1, edge.dir1, edge.color1, 0, false);
+    } else {
+      // 선2 모드: 선2(시각적 위)=-7.5*dirSign, 선3(시각적 아래)=+7.5*dirSign
+      renderOneLine(edge.label2, edge.dir2, edge.color2, -7.5 * dirSign, false);
       if (edge.label3 || edge.dir3 !== 'none') {
-        // 선3: offset +7.5(아래), 라벨 아래(isLabel3=true)
-        renderOneLine(edge.label3, edge.dir3, edge.color3, 7.5, true);
+        renderOneLine(edge.label3, edge.dir3, edge.color3, 7.5 * dirSign, true);
       }
     }
   });
@@ -4544,6 +4542,7 @@ function updateGraphEdges() {
     const dx = tc.x - fc.x, dy = tc.y - fc.y;
     const dl = Math.sqrt(dx*dx + dy*dy) || 1;
     const nx = -dy/dl, ny = dx/dl;
+    const dirSign = ny <= 0 ? 1 : -1;
 
     function drawOneLine(dir, color, offset) {
       const ofc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
@@ -4571,11 +4570,12 @@ function updateGraphEdges() {
       if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
     }
     const hasLine2e = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    drawOneLine(edge.dir1, edge.color1 || '#2C2825', hasLine2e ? 7.5 : 0);
-    if (hasLine2e) {
-      drawOneLine(edge.dir2, edge.color2 || '#2C2825', -7.5);
+    if (!hasLine2e) {
+      drawOneLine(edge.dir1, edge.color1 || '#2C2825', 0);
+    } else {
+      drawOneLine(edge.dir2, edge.color2 || '#2C2825', -7.5 * dirSign);
       if (edge.label3 || edge.dir3 !== 'none') {
-        drawOneLine(edge.dir3, edge.color3 || '#2C2825', 7.5);
+        drawOneLine(edge.dir3, edge.color3 || '#2C2825', 7.5 * dirSign);
       }
     }
   });
@@ -4662,10 +4662,10 @@ function updateGraphEdges() {
     const fc = ic(f), tc = ic(t);
     const dxe = tc.x-fc.x, dye = tc.y-fc.y, dle = Math.sqrt(dxe*dxe+dye*dye)||1;
     const nxe = -dye/dle, nye = dxe/dle;
-    const isLabel3 = lbl.dataset.label2 === '1'; // data-label2='1'이 선3 라벨
+    const dirSignE = nye <= 0 ? 1 : -1;
+    const isLabel3 = lbl.dataset.label2 === '1';
     const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    // 선3(isLabel3=true): +7.5, 선2(isLabel3=false, edgeHasLine2): -7.5, 선1단독: 0
-    const offset = isLabel3 ? 7.5 : (edgeHasLine2 ? -7.5 : 0);
+    const offset = edgeHasLine2 ? (isLabel3 ? 7.5 * dirSignE : -7.5 * dirSignE) : 0;
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
     const angleE = Math.atan2(dye, dxe);
