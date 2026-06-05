@@ -1133,6 +1133,7 @@ body { background:var(--surface); }
   display:flex; flex-direction:column; align-items:center; gap:5px;
   transform:translate(-50%,-50%);
   cursor:grab; user-select:none; -webkit-user-select:none;
+  z-index:2;
 }
 .graph-node:active { cursor:grabbing; }
 .graph-node-img {
@@ -1176,6 +1177,7 @@ body { background:var(--surface); }
   transform:translate(-50%,-50%);
   background:none; border:none; padding:2px 6px;
   user-select:none; -webkit-user-select:none;
+  z-index:1;
 }
 
 /* ── 관계 추가 바텀시트 본문 ── */
@@ -3365,7 +3367,8 @@ function renderGraphView() {
   const NODE_IMG_OFFSET_Y = 11;
   const imgCenter = (pos) => ({ x: pos.x, y: pos.y - NODE_IMG_OFFSET_Y });
 
-  // ── 그룹 바운더리 (SVG 아래에, 노드 위에) ──
+  // ── 그룹 바운더리 (SVG path로, 선/화살촉보다 먼저 삽입) ──
+  world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
   groups.forEach(group => {
     const pts = group.nodeIds
       .map(id => nodes[id])
@@ -3373,37 +3376,39 @@ function renderGraphView() {
       .map(pos => imgCenter(pos));
     if (pts.length === 0) return;
 
-    const PAD = 44;
+    const PAD = NODE_R + 22;
     let pathD = '';
+    let expandedPts = null;
 
     if (pts.length === 1) {
       const r = PAD + NODE_R;
       pathD = `M ${pts[0].x - r} ${pts[0].y} a ${r} ${r} 0 1 0 ${r*2} 0 a ${r} ${r} 0 1 0 ${-r*2} 0`;
+      expandedPts = [{ x: pts[0].x, y: pts[0].y }];
     } else {
       const hull = convexHull(pts);
-      const expandedPts = expandHull(hull, PAD);
-      pathD = roundedHullPath(expandedPts, 30);
+      expandedPts = expandHull(hull, PAD);
+      pathD = roundedHullPath(expandedPts, NODE_R);
     }
 
+    // SVG path — 다른 요소보다 먼저 삽입 (맨 뒤에 그려짐 = 배경)
     const groupPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     groupPath.setAttribute('d', pathD);
     groupPath.setAttribute('fill', group.color || '#E8F4E8');
     groupPath.setAttribute('stroke', 'none');
-    groupPath.style.cursor = 'pointer';
     groupPath.dataset.groupId = group.id;
-    svg.appendChild(groupPath);
+    const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
+    if (firstNonDefs) svg.insertBefore(groupPath, firstNonDefs);
+    else svg.appendChild(groupPath);
 
-    // 라벨 (바운더리 중앙)
-    const bbox = getBBoxFromPath(expandedPts || pts, PAD);
+    // 라벨 (world에 div)
+    const bbox = getBBoxFromPath(expandedPts, PAD);
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
     lbl.style.left = bbox.cx + 'px';
     lbl.style.top  = bbox.cy + 'px';
     lbl.style.color = darkenColor(group.color || '#E8F4E8');
-    lbl.style.transform = 'translate(-50%, -50%)';
     lbl.dataset.groupId = group.id;
-    // 길게 눌러서 수정
     let grpLabelTimer = null;
     lbl.addEventListener('pointerdown', e => {
       e.stopPropagation();
@@ -3413,7 +3418,6 @@ function renderGraphView() {
     lbl.addEventListener('pointermove', () => clearTimeout(grpLabelTimer));
     world.appendChild(lbl);
   });
-
   // SVG 관계선 + 라벨
   edges.forEach(edge => {
     const fromPos = nodes[edge.from];
