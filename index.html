@@ -1194,7 +1194,7 @@ body { background:var(--surface); }
 }
 .relation-node-wrap {
   display:flex; flex-direction:column; align-items:center; gap:4px;
-  width:72px; flex-shrink:0;
+  width:72px; flex-shrink:0; padding-top:18px;
 }
 .relation-node-circle {
   width:56px; height:56px; border-radius:50%;
@@ -1223,7 +1223,7 @@ body { background:var(--surface); }
   width:100%; border:none; background:none;
   font-family:inherit; font-size:12px; font-weight:400;
   color:var(--text-primary); text-align:center; outline:none;
-  padding:0 4px;
+  padding:0 4px; height:20px; line-height:20px;
 }
 .relation-label-input::placeholder { color:var(--text-secondary); }
 .relation-label-dummy {
@@ -1857,7 +1857,7 @@ body { background:var(--surface); }
       <!-- 선 영역 -->
       <div class="relation-center">
         <!-- 선1 모드: 높이를 선2와 통일 -->
-        <div id="relation1Row" style="display:flex;flex-direction:column;justify-content:center;height:92px;">
+        <div id="relation1Row" style="display:flex;flex-direction:column;height:92px;padding-top:17px;">
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
             <svg class="relation-line-svg" id="relationLineSvg" viewBox="0 0 120 18" preserveAspectRatio="none">
@@ -1868,7 +1868,7 @@ body { background:var(--surface); }
           </div>
         </div>
         <!-- 선2 모드: 라벨1→선1→선2→라벨2, 두 선 중심이 노드 원 중심에 오도록 -->
-        <div id="relation2Row" style="display:none;flex-direction:column;height:92px;">
+        <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
           <input class="relation-label-input" id="relationLabelInput1b" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
             <svg class="relation-line-svg" id="relationLineSvg1b" viewBox="0 0 120 18" preserveAspectRatio="none">
@@ -3454,6 +3454,7 @@ function renderGraphView() {
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
     groupPath.setAttribute('stroke-width', '1');
+    groupPath.setAttribute('stroke-dasharray', '6 4');
     grpG.appendChild(groupPath);
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
@@ -3950,6 +3951,7 @@ function renderGroupPreview() {
   boundary.setAttribute('fill', 'none');
   boundary.setAttribute('stroke', color);
   boundary.setAttribute('stroke-width', '1');
+  boundary.setAttribute('stroke-dasharray', '6 4');
   svg.appendChild(boundary);
 
   // 노드 그래픽
@@ -4281,15 +4283,6 @@ function setRelationLineMode(mode) {
   row1.style.display = isTwo ? 'none' : 'flex';
   row2.style.display = isTwo ? 'flex' : 'none';
 
-  // 원형 이미지 중심을 선 중심에 맞추기
-  // 선1: 선 중심 = input(24) + 9 = 33px → padding-top = 33 - 28 = 5px
-  // 선2: 두 선 중심 = input(24) + 선1(18) + 스페이서/2(4) = 46px → padding-top = 46 - 28 = 18px
-  const nodePadTop = isTwo ? '18px' : '5px';
-  ['relationFromCircle','relationToCircle'].forEach(id => {
-    const circle = document.getElementById(id);
-    if (circle) circle.closest('.relation-node-wrap').style.paddingTop = nodePadTop;
-  });
-
   t1.style.background   = !isTwo ? 'var(--accent-green)' : 'none';
   t1.style.borderColor  = !isTwo ? 'var(--accent-green)' : 'var(--border)';
   t1.style.color        = !isTwo ? '#fff' : 'var(--text-secondary)';
@@ -4527,6 +4520,7 @@ function updateGraphEdges() {
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
     groupPath.setAttribute('stroke-width', '1');
+    groupPath.setAttribute('stroke-dasharray', '6 4');
     grpG.appendChild(groupPath);
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
