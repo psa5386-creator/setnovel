@@ -1163,7 +1163,7 @@ body { background:var(--surface); }
 }
 .graph-node-add.visible { display:flex; }
 .graph-node-grp {
-  position:absolute; top:-14px; right:-14px;
+  position:absolute; bottom:-14px; right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
@@ -3523,10 +3523,11 @@ function renderGraphView() {
     const isGrpAlone = graphSelectedIds.length >= 3 && isLast;
     grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '');
     // 2개 선택 시: + 아래에 / 3개+ 선택 시: + 위치와 동일
-    grpBtn.style.top = '-14px';
+    grpBtn.style.top = 'auto';
+    grpBtn.style.bottom = '-14px';
     grpBtn.style.right = '-14px';
-    if (isGrpWith2) { grpBtn.style.top = '-14px'; grpBtn.style.right = '-46px'; }
-    grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>`;
+    if (isGrpWith2) { grpBtn.style.bottom = '-14px'; grpBtn.style.right = '-46px'; }
+    grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     imgWrap.appendChild(grpBtn);
