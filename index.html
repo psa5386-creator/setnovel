@@ -3421,6 +3421,16 @@ function renderGraphView() {
       if (my < bestMy) {
         bestMy = my; bestMx = mx;
         bestAngle = Math.atan2(b.y-a.y, b.x-a.x) * 180 / Math.PI;
+        // 법선 방향으로 R만큼 바깥으로 이동 (무게중심 반대 방향)
+        const dx = b.x-a.x, dy = b.y-a.y;
+        const l = Math.sqrt(dx*dx+dy*dy) || 1;
+        const cx2 = hull.reduce((s, pp) => s + pp.x, 0) / hull.length;
+        const cy2 = hull.reduce((s, pp) => s + pp.y, 0) / hull.length;
+        // 법선 두 방향 중 무게중심 반대 방향 선택
+        let nx = -dy/l, ny = dx/l;
+        if ((mx - cx2) * nx + (my - cy2) * ny < 0) { nx = -nx; ny = -ny; }
+        bestMx = mx + nx * R;
+        bestMy = my + ny * R;
       }
     }
     // 각도가 90도 이상이면 뒤집어서 읽기 편하게
@@ -4158,6 +4168,16 @@ function updateGraphEdges() {
       if (my < bestMy) {
         bestMy = my; bestMx = mx;
         bestAngle = Math.atan2(b.y-a.y, b.x-a.x) * 180 / Math.PI;
+        // 법선 방향으로 R만큼 바깥으로 이동 (무게중심 반대 방향)
+        const dx = b.x-a.x, dy = b.y-a.y;
+        const l = Math.sqrt(dx*dx+dy*dy) || 1;
+        const cx2 = hull.reduce((s, pp) => s + pp.x, 0) / hull.length;
+        const cy2 = hull.reduce((s, pp) => s + pp.y, 0) / hull.length;
+        // 법선 두 방향 중 무게중심 반대 방향 선택
+        let nx = -dy/l, ny = dx/l;
+        if ((mx - cx2) * nx + (my - cy2) * ny < 0) { nx = -nx; ny = -ny; }
+        bestMx = mx + nx * R;
+        bestMy = my + ny * R;
       }
     }
     // 각도가 90도 이상이면 뒤집어서 읽기 편하게
