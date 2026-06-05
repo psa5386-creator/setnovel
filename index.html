@@ -1171,7 +1171,6 @@ body { background:var(--surface); }
   cursor:pointer; color:var(--accent-green);
 }
 .graph-node-grp.visible { display:flex; }
-.graph-node-grp.with2 { right:-46px; }
 .graph-node-grp svg { width:18px; height:18px; stroke:var(--accent-green); fill:none; stroke-width:2.5; }
 .graph-group-label {
   position:absolute; pointer-events:auto; cursor:default;
@@ -3527,7 +3526,7 @@ function renderGraphView() {
     const grpBtn = document.createElement('div');
     const isGrpWith2 = graphSelectedIds.length === 2 && isLast;
     const isGrpAlone = graphSelectedIds.length >= 3 && isLast;
-    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '') + (isGrpWith2 ? ' with2' : '');
+    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '');
     grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
