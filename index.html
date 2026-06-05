@@ -3491,6 +3491,7 @@ function renderGraphView() {
     lbl.className = 'graph-edge-label';
     lbl.textContent = edge.label || '';
     lbl.style.cursor = 'pointer';
+    lbl.dataset.edgeId = edge.id;
     if (!edge.label) lbl.style.minWidth = '20px';
     positionEdgeLabel(lbl, fc, tc);
     lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
@@ -4112,6 +4113,7 @@ function updateGraphEdges() {
     if (edge.dir==='start'||edge.dir==='both') drawArrow(x1,y1,x2,y2);
   });
   // 그룹 바운더리 + 라벨 업데이트
+  const groups = getGraphGroups();
   world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
   svg.querySelectorAll('g[data-group-id]').forEach(el => el.remove());
   groups.forEach(group => {
@@ -4157,9 +4159,10 @@ function updateGraphEdges() {
     world.appendChild(lbl);
   });
 
-    // 엣지 라벨 위치 업데이트
-  world.querySelectorAll('.graph-edge-label').forEach((lbl, i) => {
-    const edge = edges[i];
+  // 엣지 라벨 위치 업데이트
+  world.querySelectorAll('.graph-edge-label').forEach(lbl => {
+    const edgeId = lbl.dataset.edgeId;
+    const edge = edges.find(e => e.id === edgeId);
     if (!edge) return;
     const f = nodes[edge.from], t = nodes[edge.to];
     if (!f || !t) return;
