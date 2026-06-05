@@ -1163,14 +1163,14 @@ body { background:var(--surface); }
 }
 .graph-node-add.visible { display:flex; }
 .graph-node-grp {
-  position:absolute; top:-14px; left:-14px;
+  position:absolute; top:-14px; right:-14px;
   width:28px; height:28px;
   background:none; border:none;
   display:none; align-items:center; justify-content:center;
   cursor:pointer; color:var(--accent-green);
 }
 .graph-node-grp.visible { display:flex; }
-.graph-node-grp svg { width:20px; height:20px; stroke:var(--accent-green); fill:none; stroke-width:2; }
+.graph-node-grp svg { width:18px; height:18px; stroke:var(--accent-green); fill:none; stroke-width:2.5; }
 .graph-group-label {
   position:absolute; pointer-events:auto; cursor:default;
   font-size:11px; font-weight:700; white-space:nowrap;
@@ -3519,8 +3519,14 @@ function renderGraphView() {
 
     // ○ 아이콘 (2개+ 선택 시, 마지막 선택 노드)
     const grpBtn = document.createElement('div');
-    grpBtn.className = 'graph-node-grp' + (graphSelectedIds.length >= 2 && isLast ? ' visible' : '');
-    grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="var(--accent-green)" stroke="none"/></svg>`;
+    const isGrpWith2 = graphSelectedIds.length === 2 && isLast;
+    const isGrpAlone = graphSelectedIds.length >= 3 && isLast;
+    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '');
+    // 2개 선택 시: + 아래에 / 3개+ 선택 시: + 위치와 동일
+    grpBtn.style.top = '-14px';
+    grpBtn.style.right = '-14px';
+    if (isGrpWith2) { grpBtn.style.top = '-14px'; grpBtn.style.right = '-46px'; }
+    grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     imgWrap.appendChild(grpBtn);
