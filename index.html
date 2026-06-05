@@ -3676,15 +3676,15 @@ function offsetHullPath(pts, r) {
     const l1 = Math.sqrt(dx1*dx1+dy1*dy1) || 1;
     const dx2 = p2.x-p1.x, dy2 = p2.y-p1.y;
     const l2 = Math.sqrt(dx2*dx2+dy2*dy2) || 1;
-    // 바깥 법선 (CW 기준 오른쪽이 바깥)
-    const nx1 = dy1/l1*r, ny1 = -dx1/l1*r;
-    const nx2 = dy2/l2*r, ny2 = -dx2/l2*r;
+    // 바깥 법선 (CW 기준 왼쪽이 바깥)
+    const nx1 = -dy1/l1*r, ny1 = dx1/l1*r;
+    const nx2 = -dy2/l2*r, ny2 = dx2/l2*r;
     const lineStartX = p0.x+nx1, lineStartY = p0.y+ny1;
     const arcStartX  = p1.x+nx1, arcStartY  = p1.y+ny1;
     const arcEndX    = p1.x+nx2, arcEndY    = p1.y+ny2;
     if (i === 0) d.push('M ' + lineStartX + ' ' + lineStartY);
     d.push('L ' + arcStartX + ' ' + arcStartY);
-    d.push('A ' + r + ' ' + r + ' 0 0 1 ' + arcEndX + ' ' + arcEndY);
+    d.push('A ' + r + ' ' + r + ' 0 0 0 ' + arcEndX + ' ' + arcEndY);
   }
   d.push('Z');
   return d.join(' ');
