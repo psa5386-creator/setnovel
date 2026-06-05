@@ -3422,8 +3422,8 @@ function renderGraphView() {
     lbl.style.left = lblX + 'px';
     lbl.style.top  = lblY + 'px';
     lbl.style.color = darkenColor(color);
-    lbl.style.background = 'var(--surface)';
-    lbl.style.border = '1.5px solid ' + color;
+    lbl.style.background = color;
+    lbl.style.border = 'none';
     lbl.style.borderRadius = '6px';
     lbl.style.padding = '2px 8px';
     lbl.style.fontSize = '11px';
@@ -3433,6 +3433,7 @@ function renderGraphView() {
     lbl.addEventListener('pointerdown', e => { e.stopPropagation(); grpT = setTimeout(() => openGroupSheet(group.id), 600); });
     lbl.addEventListener('pointerup',   () => clearTimeout(grpT));
     lbl.addEventListener('pointermove', () => clearTimeout(grpT));
+    lbl.addEventListener('click', e => { e.stopPropagation(); openGroupSheet(group.id); });
     world.appendChild(lbl);
   });
 
@@ -4145,8 +4146,8 @@ function updateGraphEdges() {
     lbl.style.left = lblX + 'px';
     lbl.style.top  = lblY + 'px';
     lbl.style.color = darkenColor(color);
-    lbl.style.background = 'var(--surface)';
-    lbl.style.border = '1.5px solid ' + color;
+    lbl.style.background = color;
+    lbl.style.border = 'none';
     lbl.style.borderRadius = '6px';
     lbl.style.padding = '2px 8px';
     lbl.style.fontSize = '11px';
@@ -4156,6 +4157,7 @@ function updateGraphEdges() {
     lbl.addEventListener('pointerdown', e => { e.stopPropagation(); grpT = setTimeout(() => openGroupSheet(group.id), 600); });
     lbl.addEventListener('pointerup',   () => clearTimeout(grpT));
     lbl.addEventListener('pointermove', () => clearTimeout(grpT));
+    lbl.addEventListener('click', e => { e.stopPropagation(); openGroupSheet(group.id); });
     world.appendChild(lbl);
   });
 
