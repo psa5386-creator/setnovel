@@ -3373,8 +3373,8 @@ function renderGraphView() {
   persons.forEach(p => initGraphNode(p.id));
 
   // 이미지 원 중심 좌표 계산 헬퍼
-  const NODE_IMG_OFFSET_Y = 11;
-  const imgCenter = (pos) => ({ x: pos.x, y: pos.y - NODE_IMG_OFFSET_Y });
+  const NODE_IMG_OFFSET_Y = 0;
+  const imgCenter = (pos) => ({ x: pos.x, y: pos.y });
 
   // ── 그룹 바운더리 ──
   world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
@@ -4142,8 +4142,8 @@ function updateGraphEdges() {
   const world = document.getElementById('graphWorld');
   const nodes = getGraphNodes();
   const edges = getGraphEdges();
-  const NODE_IMG_OFFSET_Y = 11;
-  const ic = (pos) => ({ x: pos.x, y: pos.y - NODE_IMG_OFFSET_Y });
+  const NODE_IMG_OFFSET_Y = 0;
+  const ic = (pos) => ({ x: pos.x, y: pos.y });
   // 선+화살촉 모두 제거 후 재렌더
   svg.querySelectorAll('line, polyline').forEach(el => el.remove());
   const ah = 6;
