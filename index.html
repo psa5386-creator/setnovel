@@ -3427,7 +3427,7 @@ function renderGraphView() {
     const innerPath = document.createElementNS(NS2, 'path');
     innerPath.setAttribute('d', hullD);
     innerPath.setAttribute('fill', 'none');
-    innerPath.setAttribute('stroke', 'var(--bg)');
+    innerPath.setAttribute('stroke', 'transparent');
     innerPath.setAttribute('stroke-width', (R * 2) - 5);
     innerPath.setAttribute('stroke-linejoin', 'round');
     innerPath.setAttribute('stroke-linecap', 'round');
@@ -3444,10 +3444,10 @@ function renderGraphView() {
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
     lbl.style.left = cx2 + 'px';
-    lbl.style.top  = (topPt.y - R - 4) + 'px';
-    lbl.style.color = darkenColor(color);
-    lbl.style.background = 'var(--surface)';
-    lbl.style.border = '1.5px solid ' + color;
+    lbl.style.top  = (topPt.y - R + 10) + 'px';
+    lbl.style.color = 'var(--surface)';
+    lbl.style.background = color;
+    lbl.style.border = 'none';
     lbl.style.borderRadius = '6px';
     lbl.style.padding = '2px 8px';
     lbl.style.fontSize = '11px';
@@ -3661,8 +3661,8 @@ function onGraphAddRelation(toId) {
 
 // 파스텔톤 그룹 색상
 const GROUP_COLORS = [
-  '#A8D4AC','#F4A8A8','#F4D0A8','#A8C0F4',
-  '#D4A8F4','#A8EAF4','#F4EAA8','#C8C8C8'
+  '#72B878','#E87272','#E8A855','#6699DD',
+  '#AA72D4','#55BBCC','#CCAA44','#999999'
 ];
 
 let groupSheetData = { nodeIds: [], color: GROUP_COLORS[0], editGroupId: null };
@@ -4124,7 +4124,7 @@ function updateGraphEdges() {
     const innerPath = document.createElementNS(NS2, 'path');
     innerPath.setAttribute('d', hullD);
     innerPath.setAttribute('fill', 'none');
-    innerPath.setAttribute('stroke', 'var(--bg)');
+    innerPath.setAttribute('stroke', 'transparent');
     innerPath.setAttribute('stroke-width', (R * 2) - 5);
     innerPath.setAttribute('stroke-linejoin', 'round');
     innerPath.setAttribute('stroke-linecap', 'round');
@@ -4141,10 +4141,10 @@ function updateGraphEdges() {
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
     lbl.style.left = cx2 + 'px';
-    lbl.style.top  = (topPt.y - R - 4) + 'px';
-    lbl.style.color = darkenColor(color);
-    lbl.style.background = 'var(--surface)';
-    lbl.style.border = '1.5px solid ' + color;
+    lbl.style.top  = (topPt.y - R + 10) + 'px';
+    lbl.style.color = 'var(--surface)';
+    lbl.style.background = color;
+    lbl.style.border = 'none';
     lbl.style.borderRadius = '6px';
     lbl.style.padding = '2px 8px';
     lbl.style.fontSize = '11px';
