@@ -1151,9 +1151,14 @@ body { background:var(--surface); }
   box-shadow:0 0 0 3px var(--accent-green-light);
 }
 .graph-node-name {
-  font-size:12px; font-weight:700; color:var(--text-primary);
-  white-space:nowrap; max-width:80px;
+  position:absolute;
+  bottom:2px; left:50%; transform:translateX(-50%);
+  font-size:12px; font-weight:700; color:#2C2825;
+  white-space:nowrap; max-width:76px;
   overflow:hidden; text-overflow:ellipsis; text-align:center;
+  -webkit-text-stroke:3px #fff;
+  paint-order:stroke fill;
+  pointer-events:none;
 }
 .graph-node-add {
   position:absolute; top:-14px; right:-14px;
@@ -3577,8 +3582,9 @@ function renderGraphView() {
     nameEl.className = 'graph-node-name';
     nameEl.textContent = name;
 
+    imgWrap.appendChild(nameEl);
+
     node.appendChild(imgWrap);
-    node.appendChild(nameEl);
 
     // 노드 탭 → 선택
     node.addEventListener('pointerdown', (e) => {
