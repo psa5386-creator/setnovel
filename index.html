@@ -90,7 +90,7 @@ body { background:var(--surface); }
 .spacer { width:36px; }
 
 /* 하단 탭바 */
-.bottom-bar { flex-shrink:0; background:var(--surface); border-top:1px solid var(--border); padding:10px 15px; display:flex; justify-content:space-around; align-items:center; }
+.bottom-bar { flex-shrink:0; background:var(--surface); border-top:1px solid var(--border); padding:10px 15px; padding-bottom:calc(10px + env(safe-area-inset-bottom, 0px)); display:flex; justify-content:space-around; align-items:center; }
 .tab-item { display:flex; flex-direction:column; align-items:center; cursor:pointer; padding:7px 14px; border-radius:var(--radius-sm); transition:all 0.2s; min-width:56px; }
 .tab-item:hover { background:var(--surface2); }
 .tab-icon { width:26px; height:26px; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; }
@@ -4648,12 +4648,14 @@ function makePlotBlockEl(block, part, groupId) {
   let blockDeletePending = false;
 
   const enterBlockEditing = () => {
+    if (blockEditing) return;
     blockEditing = true;
     ta.style.pointerEvents = 'auto';
     ta.style.userSelect = 'text';
     ta.style.webkitUserSelect = 'text';
     bToggle.innerHTML = `<svg viewBox="0 0 256 256"><line x1="20" y1="20" x2="236" y2="236" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/><line x1="20" y1="236" x2="236" y2="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="30"/></svg>`;
     bToggle.style.color = 'var(--red)';
+    ta.focus();
   };
 
   const exitBlockEditing = () => {
@@ -4666,32 +4668,15 @@ function makePlotBlockEl(block, part, groupId) {
     bToggle.style.color = '';
   };
 
-  // 비편집 상태일 때 탭을 받을 투명 오버레이
-  const tapOverlay = document.createElement('div');
-  tapOverlay.style.cssText = 'position:absolute; inset:0; cursor:text;';
-  tapOverlay.addEventListener('click', e => {
+  row.addEventListener('click', e => {
     e.stopPropagation();
-    enterBlockEditing();
-    // 탭 좌표를 textarea에 전달해서 정확한 위치에 커서
-    ta.focus();
-    const taRect = ta.getBoundingClientRect();
-    const x = e.clientX - taRect.left;
-    const y = e.clientY - taRect.top;
-    if (document.caretPositionFromPoint) {
-      const pos = document.caretPositionFromPoint(e.clientX, e.clientY);
-      if (pos) ta.setSelectionRange(pos.offset, pos.offset);
-    } else if (document.caretRangeFromPoint) {
-      const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-      if (range) ta.setSelectionRange(range.startOffset, range.startOffset);
-    }
-    tapOverlay.style.display = 'none';
+    if (!blockEditing) enterBlockEditing();
   });
 
   ta.addEventListener('blur', () => {
     if (blockDeletePending) return;
     block.content = ta.value;
     exitBlockEditing();
-    tapOverlay.style.display = '';
     savePlotData();
   });
 
@@ -4732,10 +4717,9 @@ function makePlotBlockEl(block, part, groupId) {
   setTimeout(() => { if (block.expanded) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; } }, 0);
 
   const contentWrap = document.createElement('div');
-  contentWrap.style.cssText = 'flex:1; min-width:0; position:relative;';
+  contentWrap.style.cssText = 'flex:1; min-width:0;';
   contentWrap.appendChild(preview);
   contentWrap.appendChild(ta);
-  contentWrap.appendChild(tapOverlay);
 
   row.appendChild(bToggle);
   row.appendChild(contentWrap);
