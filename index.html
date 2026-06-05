@@ -4667,26 +4667,21 @@ function makePlotBlockEl(block, part, groupId) {
     bToggle.style.color = '';
   };
 
-  // 펼친 상태: textarea 직접 클릭으로 편집 진입 (iOS가 탭 위치에 커서 정확히 찍음)
-  ta.addEventListener('click', e => {
-    e.stopPropagation();
-    if (!blockEditing) enterBlockEditing();
-  });
-
-  // 접힌 상태(preview 표시): row 클릭으로 편집 진입
+  // row 클릭으로 편집 진입 (펼침/접힘 모두)
   row.addEventListener('click', e => {
     e.stopPropagation();
     if (e.target.closest('.plot-block-toggle')) return;
-    if (!blockEditing && preview.style.display !== 'none') {
+    if (blockEditing) return;
+    if (preview.style.display !== 'none') {
       // 접힌 상태 → 펼치고 편집 진입
       block.expanded = true;
       bToggle.classList.add('expanded');
       preview.style.display = 'none';
       ta.style.display = '';
       setTimeout(() => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }, 0);
-      enterBlockEditing();
-      ta.focus();
     }
+    enterBlockEditing();
+    ta.focus();
   });
 
   ta.addEventListener('blur', () => {
