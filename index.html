@@ -3623,13 +3623,8 @@ function renderGraphView() {
         if (isLabel3) lbl.dataset.label2 = '1';
         const lfc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
         const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
-        let lblBelow;
-        if (isVertical) {
-          lblBelow = false;
-        } else {
-          // offset>0(선3) → isLabel3=true → 선2와 반대방향
-          lblBelow = isLabel3 ? !goingLeft : goingLeft;
-        }
+        // offset 부호로만 라벨 방향 결정: offset>0 → ny방향(lblBelow=true), offset<0 → 반대(lblBelow=false)
+        const lblBelow = Math.abs(dx) < 1 ? false : (offset * (ny >= 0 ? 1 : -1)) > 0;
         positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
         lbl.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
@@ -4216,7 +4211,7 @@ function execGroupConfirm() {
 // ════════════════════════════════════════
 //  관계 추가 바텀시트
 // ════════════════════════════════════════
-const RELATION_COLORS = ['#6B6B6B','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
+const RELATION_COLORS = ['#9E9E9E','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
 let relationSheetData = { fromId: null, toId: null, label1: '', dir1: 'none', color1: '#2C2825', label2: '', dir2: 'none', color2: '#2C2825', label3: '', dir3: 'none', color3: '#2C2825', editEdgeId: null };
 let relationLineMode = 1; // 1 or 2
 
@@ -4482,31 +4477,30 @@ function trimLineToNodes(fc, tc) {
 // 라벨 위치/회전 계산
 // centerX: 두 노드 중심의 x 평균 (오프셋 없는 진짜 중앙선)
 function positionEdgeLabel(lbl, fc, tc, lblBelow = false, centerX = null) {
-  const OFFSET = 10; // 선 중심에서 라벨 센터까지 거리
+  const OFFSET = 10;
   const mx = (fc.x + tc.x) / 2;
   const my = (fc.y + tc.y) / 2;
   const dx = tc.x - fc.x;
   const dy = tc.y - fc.y;
-  const angle = Math.atan2(dy, dx); // 선 각도 (라디안)
+  const angle = Math.atan2(dy, dx);
 
-  // 수직 방향 벡터 (-sin, cos) = 선에 수직인 "위쪽"
-  let nx = -Math.sin(angle);
-  let ny =  Math.cos(angle);
+  // 선에 수직인 벡터 (-sin, cos)
+  // ny>0 반전 없음 - lblBelow 부호로만 방향 결정
+  const nx = -Math.sin(angle);
+  const ny =  Math.cos(angle);
 
-  // ny > 0 이면 화면 아래 방향 → 반전
-  if (ny > 0) { nx = -nx; ny = -ny; }
-
-  // 수직선 예외 (dx ≈ 0): 진짜 중앙선(centerX) 기준으로 선이 오른쪽이면 라벨도 오른쪽
+  let fnx = nx, fny = ny;
+  // 수직선 예외: centerX 기준으로 선이 오른쪽이면 라벨도 오른쪽
   if (Math.abs(dx) < 1) {
     const ref = centerX !== null ? centerX : mx;
-    nx = fc.x >= ref ? 1 : -1;
-    ny = 0;
+    fnx = fc.x >= ref ? 1 : -1;
+    fny = 0;
   }
 
-  // lblBelow: 선 아래쪽에 배치 (선2 라벨)
+  // lblBelow=false → +nx방향, lblBelow=true → -nx방향
   const sign = lblBelow ? -1 : 1;
-  const lx = mx + nx * OFFSET * sign;
-  const ly = my + ny * OFFSET * sign;
+  const lx = mx + fnx * OFFSET * sign;
+  const ly = my + fny * OFFSET * sign;
 
   // 회전각: 글자 뒤집힘 방지 (-90~90도 범위로)
   let deg = angle * 180 / Math.PI;
@@ -4669,15 +4663,8 @@ function updateGraphEdges() {
     const offset = edgeHasLine2 ? (isLabel3 ? 7.5 * dirSignE : -7.5 * dirSignE) : 0;
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
-    const angleE = Math.atan2(dye, dxe);
-    const isVerticalE = Math.abs(dxe) < 1;
-    const goingLeftE = Math.abs(angleE) > Math.PI / 2;
-    let lblBelow;
-    if (isVerticalE) {
-      lblBelow = false;
-    } else {
-      lblBelow = isLabel3 ? !goingLeftE : goingLeftE;
-    }
+    // offset 부호로만 라벨 방향 결정
+    const lblBelow = Math.abs(dxe) < 1 ? false : (offset * (nye >= 0 ? 1 : -1)) > 0;
     positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
   });
 }
