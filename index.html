@@ -3416,12 +3416,23 @@ function renderGraphView() {
     groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
-    groupPath.setAttribute('stroke-width', '2.5');
+    groupPath.setAttribute('stroke-width', R * 2);
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
     groupPath.setAttribute('stroke-opacity', '1');
     // 내부 채우기 없이 테두리만: paint-order로 stroke 아래에 fill 없음
     grpG.appendChild(groupPath);
+
+    // 내부를 배경색으로 덮어서 테두리선만 보이게
+    const innerPath = document.createElementNS(NS2, 'path');
+    innerPath.setAttribute('d', hullD);
+    innerPath.setAttribute('fill', 'none');
+    innerPath.setAttribute('stroke', 'var(--bg)');
+    innerPath.setAttribute('stroke-width', R * 2 - 6);
+    innerPath.setAttribute('stroke-linejoin', 'round');
+    innerPath.setAttribute('stroke-linecap', 'round');
+    grpG.appendChild(innerPath);
+
 
 
 
@@ -4107,12 +4118,23 @@ function updateGraphEdges() {
     groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
     groupPath.setAttribute('stroke', color);
-    groupPath.setAttribute('stroke-width', '2.5');
+    groupPath.setAttribute('stroke-width', R * 2);
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
     groupPath.setAttribute('stroke-opacity', '1');
     // 내부 채우기 없이 테두리만: paint-order로 stroke 아래에 fill 없음
     grpG.appendChild(groupPath);
+
+    // 내부를 배경색으로 덮어서 테두리선만 보이게
+    const innerPath = document.createElementNS(NS2, 'path');
+    innerPath.setAttribute('d', hullD);
+    innerPath.setAttribute('fill', 'none');
+    innerPath.setAttribute('stroke', 'var(--bg)');
+    innerPath.setAttribute('stroke-width', R * 2 - 6);
+    innerPath.setAttribute('stroke-linejoin', 'round');
+    innerPath.setAttribute('stroke-linecap', 'round');
+    grpG.appendChild(innerPath);
+
 
 
 
