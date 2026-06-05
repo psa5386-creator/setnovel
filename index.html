@@ -3390,16 +3390,18 @@ function renderGraphView() {
   const NODE_IMG_OFFSET_Y = 11;
   const imgCenter = (pos) => ({ x: pos.x, y: pos.y - NODE_IMG_OFFSET_Y });
 
-  // ── 그룹 바운더리 (오프셋 테두리선 방식) ──
+  // ── 그룹 바운더리 ──
+  world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
+  groups.forEach(group => {
+    const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean).map(pos => imgCenter(pos));
+    if (pts.length === 0) return;
     const R = 54;
     const NS2 = 'http://www.w3.org/2000/svg';
     const color = group.color || '#A8D4AC';
-    const hull = pts.length <= 2 ? pts : convexHull(pts);
+    const hull = pts.length <= 2 ? pts.slice() : convexHull(pts);
     const hullD = hull.length === 1
-      ? `M ${hull[0].x} ${hull[0].y}`
-      : hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
-
-    // feMorphology dilate로 R만큼 팽창 → 테두리선만 stroke, fill 없음
+      ? 'M ' + hull[0].x + ' ' + hull[0].y
+      : hull.map((p, i) => (i === 0 ? 'M ' + p.x + ' ' + p.y : 'L ' + p.x + ' ' + p.y)).join(' ') + ' Z';
     const filterId = 'grp-dilate-' + group.id;
     const filter = document.createElementNS(NS2, 'filter');
     filter.setAttribute('id', filterId);
@@ -3407,19 +3409,15 @@ function renderGraphView() {
     filter.setAttribute('width', '200%'); filter.setAttribute('height', '200%');
     const morph = document.createElementNS(NS2, 'feMorphology');
     morph.setAttribute('operator', 'dilate');
-    morph.setAttribute('radius', R);
+    morph.setAttribute('radius', String(R));
     filter.appendChild(morph);
-
     let defs = svg.querySelector('defs');
     if (!defs) { defs = document.createElementNS(NS2, 'defs'); svg.insertBefore(defs, svg.firstChild); }
-    // 기존 같은 id 필터 제거
-    const old = defs.querySelector('#' + filterId);
-    if (old) old.remove();
+    const oldFilter = defs.querySelector('#' + filterId);
+    if (oldFilter) oldFilter.remove();
     defs.appendChild(filter);
-
     const grpG = document.createElementNS(NS2, 'g');
     grpG.dataset.groupId = group.id;
-
     const groupPath = document.createElementNS(NS2, 'path');
     groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
@@ -3427,18 +3425,15 @@ function renderGraphView() {
     groupPath.setAttribute('stroke-width', '3');
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
-    groupPath.setAttribute('filter', `url(#${filterId})`);
+    groupPath.setAttribute('filter', 'url(#' + filterId + ')');
     grpG.appendChild(groupPath);
-
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
-
-    // 라벨
     const sortedByY = hull.slice().sort((a, b) => a.y - b.y);
     const topTwo = sortedByY.slice(0, Math.min(2, sortedByY.length));
-    const lblX = topTwo.reduce((s, p) => s + p.x, 0) / topTwo.length;
-    const lblY = topTwo.reduce((s, p) => s + p.y, 0) / topTwo.length - R;
+    const lblX = topTwo.reduce((sum, p) => sum + p.x, 0) / topTwo.length;
+    const lblY = topTwo.reduce((sum, p) => sum + p.y, 0) / topTwo.length - R;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
@@ -3461,6 +3456,7 @@ function renderGraphView() {
     lbl.addEventListener('pointermove', () => clearTimeout(grpLabelTimer));
     world.appendChild(lbl);
   });
+
     // SVG 관계선 + 라벨
   edges.forEach(edge => {
     const fromPos = nodes[edge.from];
@@ -4090,22 +4086,21 @@ function updateGraphEdges() {
   });
   // 그룹 바운더리 + 라벨 업데이트
   const groups = getGraphGroups();
-  svg.querySelectorAll('g[data-group-id], path[data-group-id]').forEach(el => el.remove());
+  svg.querySelectorAll('g[data-group-id]').forEach(el => el.remove());
   world.querySelectorAll('.graph-group-label').forEach(el => el.remove());
+  // filter defs 정리
+  const defsEl = svg.querySelector('defs');
+  if (defsEl) defsEl.querySelectorAll('filter[id^="grp-dilate-"]').forEach(el => el.remove());
   groups.forEach(group => {
     const pts = group.nodeIds.map(id => nodes[id]).filter(Boolean).map(pos => ic(pos));
     if (pts.length === 0) return;
     const R = 54;
     const NS2 = 'http://www.w3.org/2000/svg';
-    const grpG = document.createElementNS(NS2, 'g');
-    grpG.dataset.groupId = group.id;
     const color = group.color || '#A8D4AC';
-
-    const hull = pts.length <= 2 ? pts : convexHull(pts);
+    const hull = pts.length <= 2 ? pts.slice() : convexHull(pts);
     const hullD = hull.length === 1
-      ? `M ${hull[0].x} ${hull[0].y}`
-      : hull.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ') + ' Z';
-
+      ? 'M ' + hull[0].x + ' ' + hull[0].y
+      : hull.map((p, i) => (i === 0 ? 'M ' + p.x + ' ' + p.y : 'L ' + p.x + ' ' + p.y)).join(' ') + ' Z';
     const filterId = 'grp-dilate-' + group.id;
     const filter = document.createElementNS(NS2, 'filter');
     filter.setAttribute('id', filterId);
@@ -4113,14 +4108,13 @@ function updateGraphEdges() {
     filter.setAttribute('width', '200%'); filter.setAttribute('height', '200%');
     const morph = document.createElementNS(NS2, 'feMorphology');
     morph.setAttribute('operator', 'dilate');
-    morph.setAttribute('radius', R);
+    morph.setAttribute('radius', String(R));
     filter.appendChild(morph);
     let defs = svg.querySelector('defs');
     if (!defs) { defs = document.createElementNS(NS2, 'defs'); svg.insertBefore(defs, svg.firstChild); }
-    const oldF = defs.querySelector('#' + filterId);
-    if (oldF) oldF.remove();
     defs.appendChild(filter);
-
+    const grpG = document.createElementNS(NS2, 'g');
+    grpG.dataset.groupId = group.id;
     const groupPath = document.createElementNS(NS2, 'path');
     groupPath.setAttribute('d', hullD);
     groupPath.setAttribute('fill', 'none');
@@ -4128,26 +4122,23 @@ function updateGraphEdges() {
     groupPath.setAttribute('stroke-width', '3');
     groupPath.setAttribute('stroke-linejoin', 'round');
     groupPath.setAttribute('stroke-linecap', 'round');
-    groupPath.setAttribute('filter', `url(#${filterId})`);
+    groupPath.setAttribute('filter', 'url(#' + filterId + ')');
     grpG.appendChild(groupPath);
-
     const firstNonDefs = [...svg.children].find(el => el.tagName !== 'defs');
     if (firstNonDefs) svg.insertBefore(grpG, firstNonDefs);
     else svg.appendChild(grpG);
-
-    // 라벨: hull 최상단 수평엣지(y값 가장 작은 두 꼭짓점) 중심에 배치
     const sortedByY = hull.slice().sort((a, b) => a.y - b.y);
     const topTwo = sortedByY.slice(0, Math.min(2, sortedByY.length));
-    const lblX = topTwo.reduce((s, p) => s + p.x, 0) / topTwo.length;
-    const lblY = topTwo.reduce((s, p) => s + p.y, 0) / topTwo.length - R;
+    const lblX = topTwo.reduce((sum, p) => sum + p.x, 0) / topTwo.length;
+    const lblY = topTwo.reduce((sum, p) => sum + p.y, 0) / topTwo.length - R;
     const lbl = document.createElement('div');
     lbl.className = 'graph-group-label';
     lbl.textContent = group.name || '';
     lbl.style.left = lblX + 'px';
     lbl.style.top  = lblY + 'px';
     lbl.style.color = darkenColor(color);
-    lbl.style.background = color;
-    lbl.style.border = 'none';
+    lbl.style.background = 'var(--surface)';
+    lbl.style.border = '1.5px solid ' + color;
     lbl.style.borderRadius = '6px';
     lbl.style.padding = '2px 8px';
     lbl.style.fontSize = '11px';
@@ -4159,6 +4150,7 @@ function updateGraphEdges() {
     lbl.addEventListener('pointermove', () => clearTimeout(t2));
     world.appendChild(lbl);
   });
+
     // 엣지 라벨 위치 업데이트
   world.querySelectorAll('.graph-edge-label').forEach((lbl, i) => {
     const edge = edges[i];
