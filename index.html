@@ -1830,14 +1830,23 @@ body { background:var(--surface); }
     <div class="relation-person-row">
       <span class="relation-person-name" id="relationFromName">이름</span>
       <div class="relation-center">
-        <input class="relation-label-input" id="relationLabelInput" placeholder="관계" autocomplete="off">
+        <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
         <div class="relation-line-wrap" onclick="cycleRelationDir()">
           <svg class="relation-line-svg" id="relationLineSvg" viewBox="0 0 120 18" preserveAspectRatio="none">
-            <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="1.5"/>
-            <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-            <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
+            <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
           </svg>
         </div>
+        <div style="height:20px"></div>
+        <div class="relation-line-wrap" onclick="cycleRelationDir2()">
+          <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
+            <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
+            <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+          </svg>
+        </div>
+        <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
         <div class="relation-label-dummy">ㅤ</div>
       </div>
       <span class="relation-person-name" id="relationToName">이름</span>
@@ -3454,63 +3463,73 @@ function renderGraphView() {
     if (!fromPos || !toPos) return;
     const fc = imgCenter(fromPos), tc = imgCenter(toPos);
 
-    const color = edge.color || 'var(--accent)';
     const NS = 'http://www.w3.org/2000/svg';
-    const {x1:lx1, y1:ly1, x2:lx2, y2:ly2} = trimLineToNodes(fc, tc);
     const ah = 6;
 
-    // 선
-    const line = document.createElementNS(NS, 'line');
-    line.setAttribute('x1', lx1); line.setAttribute('y1', ly1);
-    line.setAttribute('x2', lx2); line.setAttribute('y2', ly2);
-    line.setAttribute('stroke', color);
-    line.setAttribute('stroke-width', '2.5');
-    line.setAttribute('stroke-linecap', 'round');
-    line.dataset.edgeId = edge.id;
-    svg.appendChild(line);
+    // 법선 방향 계산 (중앙선 기준 수직)
+    const dx = tc.x - fc.x, dy = tc.y - fc.y;
+    const dl = Math.sqrt(dx*dx + dy*dy) || 1;
+    const nx = -dy/dl, ny = dx/dl; // 법선 (위쪽)
 
-    // 투명 히트영역 (클릭 쉽게)
-    const hitLine = document.createElementNS(NS, 'line');
-    hitLine.setAttribute('x1', lx1); hitLine.setAttribute('y1', ly1);
-    hitLine.setAttribute('x2', lx2); hitLine.setAttribute('y2', ly2);
-    hitLine.setAttribute('stroke', 'transparent');
-    hitLine.setAttribute('stroke-width', '20');
-    hitLine.style.cursor = 'pointer';
-    hitLine.dataset.edgeId = edge.id;
-    hitLine.addEventListener('click', ev => {
-      ev.stopPropagation();
-      openRelationSheet(edge.from, edge.to);
-    });
-    svg.appendChild(hitLine);
+    function renderOneLine(label, dir, color, offset, lblBelow, isLabel2 = false) {
+      if (!label && dir === 'none' && !color) return;
+      const {x1, y1, x2, y2} = trimLineToNodes(
+        {x: fc.x + nx*offset, y: fc.y + ny*offset},
+        {x: tc.x + nx*offset, y: tc.y + ny*offset}
+      );
+      const lineEl = document.createElementNS(NS, 'line');
+      lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
+      lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
+      lineEl.setAttribute('stroke', color || 'var(--accent)');
+      lineEl.setAttribute('stroke-width', '2.5');
+      lineEl.setAttribute('stroke-linecap', 'round');
+      lineEl.dataset.edgeId = edge.id;
+      svg.appendChild(lineEl);
 
-    // 화살촉 직접 그리기
-    function drawArrow(tx, ty, fx, fy) {
-      const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
-      const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
-      const pl = document.createElementNS(NS, 'polyline');
-      pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
-      pl.setAttribute('fill','none'); pl.setAttribute('stroke',color);
-      pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
-      pl.dataset.edgeId = edge.id;
-      svg.appendChild(pl);
+      const hitLine = document.createElementNS(NS, 'line');
+      hitLine.setAttribute('x1', x1); hitLine.setAttribute('y1', y1);
+      hitLine.setAttribute('x2', x2); hitLine.setAttribute('y2', y2);
+      hitLine.setAttribute('stroke', 'transparent');
+      hitLine.setAttribute('stroke-width', '20');
+      hitLine.style.cursor = 'pointer';
+      hitLine.dataset.edgeId = edge.id;
+      hitLine.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
+      svg.appendChild(hitLine);
+
+      function drawArrow(tx, ty, fx, fy) {
+        const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
+        const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
+        const pl = document.createElementNS(NS, 'polyline');
+        pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
+        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || 'var(--accent)');
+        pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        pl.dataset.edgeId = edge.id;
+        svg.appendChild(pl);
+      }
+      if (dir==='end'  || dir==='both') drawArrow(x2,y2,x1,y1);
+      if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
+
+      if (label) {
+        const lbl = document.createElement('div');
+        lbl.className = 'graph-edge-label';
+        lbl.textContent = label;
+        lbl.style.cursor = 'pointer';
+        lbl.dataset.edgeId = edge.id;
+        if (isLabel2) lbl.dataset.label2 = '1';
+        const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
+        positionEdgeLabel(lbl, lfc, ltc, lblBelow);
+        lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
+        lbl.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
+        world.appendChild(lbl);
+      }
     }
-    if (edge.dir==='end' ||edge.dir==='both') drawArrow(lx2,ly2,lx1,ly1);
-    if (edge.dir==='start'||edge.dir==='both') drawArrow(lx1,ly1,lx2,ly2);
 
-    // 라벨 (없어도 클릭 영역으로 생성)
-    const lbl = document.createElement('div');
-    lbl.className = 'graph-edge-label';
-    lbl.textContent = edge.label || '';
-    lbl.style.cursor = 'pointer';
-    lbl.dataset.edgeId = edge.id;
-    if (!edge.label) lbl.style.minWidth = '20px';
-    positionEdgeLabel(lbl, fc, tc);
-    lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
-    lbl.addEventListener('click', ev => {
-      ev.stopPropagation();
-      openRelationSheet(edge.from, edge.to);
-    });
-    world.appendChild(lbl);
+    // 선1: 중앙에서 위로 10
+    renderOneLine(edge.label, edge.dir, edge.color, -10, false);
+    // 선2: 중앙에서 아래로 10 (라벨은 선 아래)
+    if (edge.label2 || edge.dir2 !== 'none') {
+      renderOneLine(edge.label2, edge.dir2, edge.color2 || edge.color, 10, true, true);
+    }
   });
 
   // 노드
@@ -4001,7 +4020,7 @@ function execGroupConfirm() {
 //  관계 추가 바텀시트
 // ════════════════════════════════════════
 const RELATION_COLORS = ['#2C2825','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
-let relationSheetData = { fromId: null, toId: null, dir: 'none', color: '#2C2825', editEdgeId: null };
+let relationSheetData = { fromId: null, toId: null, dir: 'none', color: '#2C2825', editEdgeId: null, label2: '', dir2: 'none', color2: '#2C2825' };
 
 function getPersonName(personId) {
   const item = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
@@ -4021,15 +4040,20 @@ function openRelationSheet(fromId, toId) {
     fromId, toId,
     dir:   existing?.dir   || 'none',
     color: existing?.color || '#2C2825',
-    editEdgeId: existing?.id || null
+    editEdgeId: existing?.id || null,
+    label2: existing?.label2 || '',
+    dir2:   existing?.dir2   || 'none',
+    color2: existing?.color2 || '#2C2825',
   };
 
   document.getElementById('relationFromName').textContent = getPersonName(fromId);
   document.getElementById('relationToName').textContent   = getPersonName(toId);
   document.getElementById('relationLabelInput').value     = existing?.label || '';
+  document.getElementById('relationLabelInput2').value    = existing?.label2 || '';
   document.getElementById('relationSheetTitle').textContent = existing ? '관계 수정' : '관계 추가';
 
   renderRelationDir();
+  renderRelationDir2();
   renderRelationColors();
   document.getElementById('relationSheetOverlay').classList.add('open');
 }
@@ -4047,13 +4071,14 @@ function onRelationSheetOverlayClick(e) {
 function saveRelationSheet() {
   const edges = getGraphEdges();
   const label = document.getElementById('relationLabelInput').value.trim();
-  const { fromId, toId, dir, color, editEdgeId } = relationSheetData;
+  const label2 = document.getElementById('relationLabelInput2').value.trim();
+  const { fromId, toId, dir, color, editEdgeId, dir2, color2 } = relationSheetData;
 
   if (editEdgeId) {
     const edge = edges.find(e => e.id === editEdgeId);
-    if (edge) { edge.label = label; edge.dir = dir; edge.color = color; }
+    if (edge) { edge.label = label; edge.dir = dir; edge.color = color; edge.label2 = label2; edge.dir2 = dir2; edge.color2 = color2; }
   } else {
-    edges.push({ id: 'edge-' + Date.now(), from: fromId, to: toId, label, dir, color });
+    edges.push({ id: 'edge-' + Date.now(), from: fromId, to: toId, label, dir, color, label2, dir2, color2 });
   }
   // Firebase 저장
   if (PROJECT_ID) {
@@ -4072,6 +4097,13 @@ function cycleRelationDir() {
   renderRelationDir();
 }
 
+function cycleRelationDir2() {
+  const dirs = ['none', 'end', 'start', 'both'];
+  const idx = dirs.indexOf(relationSheetData.dir2);
+  relationSheetData.dir2 = dirs[(idx + 1) % dirs.length];
+  renderRelationDir2();
+}
+
 function renderRelationDir() {
   const line        = document.getElementById('relationDirLine');
   const arrowEnd    = document.getElementById('relationArrowEnd');
@@ -4082,6 +4114,19 @@ function renderRelationDir() {
   arrowStart.setAttribute('stroke', color);
   arrowEnd.style.display   = (dir === 'end'   || dir === 'both') ? '' : 'none';
   arrowStart.style.display = (dir === 'start' || dir === 'both') ? '' : 'none';
+}
+
+function renderRelationDir2() {
+  const line        = document.getElementById('relationDirLine2');
+  const arrowEnd    = document.getElementById('relationArrowEnd2');
+  const arrowStart  = document.getElementById('relationArrowStart2');
+  if (!line) return;
+  const { dir2, color2 } = relationSheetData;
+  line.setAttribute('stroke', color2);
+  arrowEnd.setAttribute('stroke', color2);
+  arrowStart.setAttribute('stroke', color2);
+  arrowEnd.style.display   = (dir2 === 'end'   || dir2 === 'both') ? '' : 'none';
+  arrowStart.style.display = (dir2 === 'start' || dir2 === 'both') ? '' : 'none';
 }
 
 function renderRelationColors() {
@@ -4114,7 +4159,7 @@ function trimLineToNodes(fc, tc) {
 
 // 라벨 위치/회전 계산
 // 항상 선 중심에서 수직 위쪽으로 오프셋, 수직선일 때는 왼쪽
-function positionEdgeLabel(lbl, fc, tc) {
+function positionEdgeLabel(lbl, fc, tc, lblBelow = false) {
   const OFFSET = 10; // 선 중심에서 라벨 센터까지 거리
   const mx = (fc.x + tc.x) / 2;
   const my = (fc.y + tc.y) / 2;
@@ -4132,8 +4177,10 @@ function positionEdgeLabel(lbl, fc, tc) {
   // 수직선 예외 (dx ≈ 0): 왼쪽으로
   if (Math.abs(dx) < 1) { nx = -1; ny = 0; }
 
-  const lx = mx + nx * OFFSET;
-  const ly = my + ny * OFFSET;
+  // lblBelow: 선 아래쪽에 배치 (선2 라벨)
+  const sign = lblBelow ? -1 : 1;
+  const lx = mx + nx * OFFSET * sign;
+  const ly = my + ny * OFFSET * sign;
 
   // 회전각: 글자 뒤집힘 방지 (-90~90도 범위로)
   let deg = angle * 180 / Math.PI;
@@ -4160,31 +4207,41 @@ function updateGraphEdges() {
     const f = nodes[edge.from], t = nodes[edge.to];
     if (!f || !t) return;
     const fc = ic(f), tc = ic(t);
-    const {x1, y1, x2, y2} = trimLineToNodes(fc, tc);
-    const color = edge.color || 'var(--accent)';
     const NS = 'http://www.w3.org/2000/svg';
 
-    const line = document.createElementNS(NS, 'line');
-    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-    line.setAttribute('stroke', color);
-    line.setAttribute('stroke-width', '2.5');
-    line.setAttribute('stroke-linecap', 'round');
-    line.dataset.edgeId = edge.id;
-    svg.appendChild(line);
+    const dx = tc.x - fc.x, dy = tc.y - fc.y;
+    const dl = Math.sqrt(dx*dx + dy*dy) || 1;
+    const nx = -dy/dl, ny = dx/dl;
 
-    function drawArrow(tx, ty, fx, fy) {
-      const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
-      const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
-      const pl = document.createElementNS(NS, 'polyline');
-      pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
-      pl.setAttribute('fill','none'); pl.setAttribute('stroke',color);
-      pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
-      pl.dataset.edgeId = edge.id;
-      svg.appendChild(pl);
+    function drawOneLine(dir, color, offset) {
+      const ofc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
+      const otc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
+      const {x1, y1, x2, y2} = trimLineToNodes(ofc, otc);
+      const lineEl = document.createElementNS(NS, 'line');
+      lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
+      lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
+      lineEl.setAttribute('stroke', color || 'var(--accent)');
+      lineEl.setAttribute('stroke-width', '2.5');
+      lineEl.setAttribute('stroke-linecap', 'round');
+      lineEl.dataset.edgeId = edge.id;
+      svg.appendChild(lineEl);
+      function drawArrow(tx, ty, fx, fy) {
+        const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
+        const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
+        const pl = document.createElementNS(NS, 'polyline');
+        pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
+        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || 'var(--accent)');
+        pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        pl.dataset.edgeId = edge.id;
+        svg.appendChild(pl);
+      }
+      if (dir==='end'  || dir==='both') drawArrow(x2,y2,x1,y1);
+      if (dir==='start'|| dir==='both') drawArrow(x1,y1,x2,y2);
     }
-    if (edge.dir==='end' ||edge.dir==='both') drawArrow(x2,y2,x1,y1);
-    if (edge.dir==='start'||edge.dir==='both') drawArrow(x1,y1,x2,y2);
+    drawOneLine(edge.dir, edge.color, -10);
+    if (edge.label2 || edge.dir2 !== 'none') {
+      drawOneLine(edge.dir2, edge.color2 || edge.color, 10);
+    }
   });
   // 그룹 바운더리 + 라벨 업데이트
   const groups = getGraphGroups();
@@ -4266,7 +4323,14 @@ function updateGraphEdges() {
     const f = nodes[edge.from], t = nodes[edge.to];
     if (!f || !t) return;
     const fc = ic(f), tc = ic(t);
-    positionEdgeLabel(lbl, fc, tc);
+    const dxe = tc.x-fc.x, dye = tc.y-fc.y, dle = Math.sqrt(dxe*dxe+dye*dye)||1;
+    const nxe = -dye/dle, nye = dxe/dle;
+    // label2 라벨인지 판별 (data-label2 속성)
+    const isLabel2 = lbl.dataset.label2 === '1';
+    const offset = isLabel2 ? 10 : -10;
+    const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
+    const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
+    positionEdgeLabel(lbl, lfc, ltc, isLabel2);
   });
 }
 
