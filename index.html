@@ -2261,8 +2261,11 @@ body { background:var(--surface); }
       <button class="era-sheet-save" onclick="saveGroupSheet()">저장</button>
     </div>
     <!-- 미리보기: SVG 바운더리 + 노드 + 라벨 입력창 -->
-    <div class="group-preview-wrap">
+    <div class="group-preview-wrap" style="position:relative;">
       <svg class="group-preview-svg" id="groupPreviewSvg" viewBox="0 0 300 140"></svg>
+      <input id="groupLabelInput" placeholder="그룹명" autocomplete="off"
+        style="position:absolute;border:none;outline:none;font-family:inherit;font-size:11px;font-weight:600;text-align:center;border-radius:6px;padding:1px 4px;pointer-events:auto;z-index:10;"
+        oninput="onGroupLabelInput()">
     </div>
     <!-- 색상 -->
     <div class="relation-color-row" id="groupColorRow"></div>
@@ -3848,6 +3851,8 @@ function openGroupSheet(groupId) {
   if (!group) return;
   groupSheetData = { nodeIds: group.nodeIds.slice(), color: group.color, editGroupId: groupId };
   document.getElementById('groupSheetTitle').textContent = '그룹 수정';
+  const inp = document.getElementById('groupLabelInput');
+  if (inp) inp.value = group.name || '';
   renderGroupPreview();
   renderGroupColors();
   document.getElementById('groupSheetOverlay').classList.add('open');
@@ -3916,29 +3921,38 @@ function renderGroupPreview() {
     svg.appendChild(iconG);
   });
 
-  // 라벨 입력창 — foreignObject, 너비 auto처럼 보이도록 충분히 크게
+  // 라벨 입력창 위치 업데이트 (HTML input)
   const lblX = (pts[0].x + pts[1].x) / 2;
   const lblY = pts[0].y - PAD;
-  const fo = document.createElementNS(NS, 'foreignObject');
-  const previewName = groupSheetData.editGroupId
-    ? (getGraphGroups().find(g => g.id === groupSheetData.editGroupId)?.name || '')
-    : '';
-  const charW = 8; // 글자당 평균 px
-  const foW = Math.max(50, (previewName || '그룹명').length * charW + 16);
-  fo.setAttribute('x', String(lblX - foW/2)); fo.setAttribute('y', String(lblY - 11));
-  fo.setAttribute('width', String(foW)); fo.setAttribute('height', '22');
-  const inp = document.createElement('input');
-  inp.id = 'groupLabelInput';
-  inp.placeholder = '그룹명';
-  inp.autocomplete = 'off';
-  inp.value = previewName;
-  inp.style.cssText = 'width:' + foW + 'px;border:none;background:' + color + ';font-family:inherit;font-size:11px;font-weight:600;color:' + darkenColor(color) + ';padding:1px 4px;outline:none;text-align:center;border-radius:6px;box-sizing:border-box;';
-  inp.addEventListener('input', () => { renderGroupPreview(); });
-  inp.addEventListener('pointerdown', e => e.stopPropagation());
-  inp.addEventListener('touchstart', e => e.stopPropagation());
-  inp.addEventListener('keydown', e => e.stopPropagation());
-  fo.appendChild(inp);
-  svg.appendChild(fo);
+  const inp = document.getElementById('groupLabelInput');
+  if (inp) {
+    const wrap = document.querySelector('.group-preview-wrap');
+    const svgEl = document.getElementById('groupPreviewSvg');
+    if (wrap && svgEl) {
+      const svgRect = svgEl.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      const scaleX = svgRect.width / 300;
+      const scaleY = svgRect.height / 140;
+      const name = inp.value || '';
+      const foW = Math.max(50, (name || '그룹명').length * 8 + 16);
+      inp.style.left = (svgRect.left - wrapRect.left + lblX * scaleX - foW/2) + 'px';
+      inp.style.top  = (svgRect.top  - wrapRect.top  + lblY * scaleY - 11) + 'px';
+      inp.style.width = foW + 'px';
+      inp.style.background = color;
+      inp.style.color = darkenColor(color);
+    }
+  }
+}
+
+function onGroupLabelInput() {
+  const inp = document.getElementById('groupLabelInput');
+  if (!inp) return;
+  const color = groupSheetData.color || '#72B878';
+  const name = inp.value || '';
+  const foW = Math.max(50, (name || '그룹명').length * 8 + 16);
+  inp.style.width = foW + 'px';
+  inp.style.background = color;
+  inp.style.color = darkenColor(color);
 }
 
 function renderGroupColors() {
@@ -9235,7 +9249,7 @@ Object.assign(window, {
   onGraphAddGroup,
   openGroupSheet,
   closeGroupSheet,
-  onGroupSheetOverlayClick,
+  onGroupSheetOverlayClick, onGroupLabelInput,
   saveGroupSheet,
   closeGroupConfirmSheet,
   execGroupConfirm,
