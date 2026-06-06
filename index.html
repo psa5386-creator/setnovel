@@ -3165,27 +3165,14 @@ function switchTab(tab) {
   // 탭별 렌더
   if (tab === 'home')     renderHomeList();
   if (tab === 'person') {
+    setPersonView('list');
     renderPersonList();
-    const pCanvas = document.getElementById('personGraphCanvas');
-    if (pCanvas && pCanvas.classList.contains('active')) {
-      requestAnimationFrame(() => {
-        graphCenterInitialized = false;
-        initGraphCenter();
-        renderGraphView();
-        applyGraphTransform();
-      });
-    }
   }
   if (tab === 'timeline') renderTimelinePage();
   if (tab === 'plot')     renderPlotList();
   if (tab === 'setting') {
+    setSettingView('list');
     renderSettingList();
-    const mapBody = document.getElementById('settingMapBody');
-    if (mapBody && mapBody.classList.contains('active')) {
-      mapGestureInit = false;
-      renderMapView();
-      initMapGestures();
-    }
   }
 
   // 상단바 타이틀 설정
@@ -4269,12 +4256,13 @@ function openRelationSheet(fromId, toId) {
 
   // 선2 데이터 있으면 2선 모드, 없으면 1선 모드
   const hasLine2 = existing && (existing.label2 || existing.dir2 !== 'none' || existing.label3 || existing.dir3 !== 'none');
-  setRelationLineMode(hasLine2 ? 2 : 1);
-
-  renderRelationDir();
-  renderRelationDir2();
-  renderRelationColors();
   document.getElementById('relationSheetOverlay').classList.add('open');
+  requestAnimationFrame(() => {
+    setRelationLineMode(hasLine2 ? 2 : 1);
+    renderRelationDir();
+    renderRelationDir2();
+    renderRelationColors();
+  });
 }
 
 function closeRelationSheet() {
@@ -4344,10 +4332,14 @@ function setRelationLineMode(mode) {
   t2.style.color        = isTwo  ? '#fff' : 'var(--text-secondary)';
 
   if (isTwo) {
-    renderRelationDir2();
-    renderRelationDir3();
+    requestAnimationFrame(() => {
+      renderRelationDir2();
+      renderRelationDir3();
+    });
   } else {
-    renderRelationDir();
+    requestAnimationFrame(() => {
+      renderRelationDir();
+    });
     setColorTarget(1);
   }
 }
@@ -6335,16 +6327,6 @@ function closeDetail() {
   currentItemId = null;
   currentStoryId = null;
   currentDetailMode = 'item';
-  // 관계도뷰가 활성 상태면 복귀 후 재렌더
-  const pCanvas = document.getElementById('personGraphCanvas');
-  if (pCanvas && pCanvas.classList.contains('active')) {
-    requestAnimationFrame(() => {
-      graphCenterInitialized = false;
-      initGraphCenter();
-      renderGraphView();
-      applyGraphTransform();
-    });
-  }
 }
 
 // ── 저장 후 카드 업데이트 ──
