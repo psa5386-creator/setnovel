@@ -1223,7 +1223,7 @@ body { background:var(--surface); }
   cursor:pointer;
 }
 .relation-line-svg {
-  width:80%; height:18px;
+  width:100%; height:18px;
   flex-shrink:0; overflow:visible;
 }
 .relation-label-input {
@@ -1873,9 +1873,9 @@ body { background:var(--surface); }
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
             <svg class="relation-line-svg" id="relationLineSvg" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="3"/>
-              <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <line id="relationDirLine" x1="10" y1="9" x2="110" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd"   points="104,3 110,9 104,15" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart" points="16,3 10,9 16,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
         </div>
@@ -1885,17 +1885,17 @@ body { background:var(--surface); }
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir2()">
             <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="3"/>
-              <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <line id="relationDirLine2" x1="10" y1="9" x2="110" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd2"   points="104,3 110,9 104,15" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart2" points="16,3 10,9 16,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
           <div style="height:8px;flex-shrink:0;"></div>
           <div class="relation-line-wrap" onclick="cycleRelationDir3()">
             <svg class="relation-line-svg" id="relationLineSvg3" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine3" x1="4" y1="9" x2="116" y2="9" stroke-width="3"/>
-              <polyline id="relationArrowEnd3"   points="110,3 116,9 110,15" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart3" points="10,3 4,9 10,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <line id="relationDirLine3" x1="10" y1="9" x2="110" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd3"   points="104,3 110,9 104,15" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart3" points="16,3 10,9 16,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
           <input class="relation-label-input" id="relationLabelInput3" placeholder="관계3" autocomplete="off">
@@ -3584,7 +3584,7 @@ function renderGraphView() {
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
       lineEl.setAttribute('stroke', strokeColor);
-      lineEl.setAttribute('stroke-width', '3');
+      lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
       svg.appendChild(lineEl);
@@ -4560,7 +4560,7 @@ function updateGraphEdges() {
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
       lineEl.setAttribute('stroke', color || '#2C2825');
-      lineEl.setAttribute('stroke-width', '3');
+      lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
       svg.appendChild(lineEl);
