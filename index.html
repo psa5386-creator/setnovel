@@ -565,7 +565,7 @@ body { background:var(--surface); }
 .era-sheet-back svg { width:18px; height:18px; stroke:currentColor; fill:none; }
 .era-sheet-title {
   font-size:16px; font-weight:700; color:var(--accent-green);
-  position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap; pointer-events:none;
+  position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap;
 }
 .era-sheet-save {
   font-size:14px; font-weight:600; color:var(--text-primary);
@@ -1850,7 +1850,9 @@ body { background:var(--surface); }
       <span class="era-sheet-title" id="relationSheetTitle" onclick="toggleRelationLineMode()"
         style="cursor:pointer; display:flex; align-items:center; gap:6px; justify-content:center;">
         <span id="relationSheetTitleText">관계 추가</span>
-        <span id="relationLineModeIcon" style="font-size:13px; color:var(--accent-green); font-weight:700;">—</span>
+        <svg id="relationLineModeIcon" width="18" height="14" viewBox="0 0 18 14" style="flex-shrink:0;">
+          <line x1="1" y1="7" x2="17" y2="7" stroke="var(--accent-green)" stroke-width="2.2" stroke-linecap="round"/>
+        </svg>
       </span>
       <button class="era-sheet-save" onclick="saveRelationSheet()">저장</button>
     </div>
@@ -4549,7 +4551,7 @@ function setRelationLineMode(mode) {
 
   // 타이틀 아이콘
   const icon = document.getElementById('relationLineModeIcon');
-  if (icon) icon.textContent = isTwo ? '=' : '—';
+  if (icon) { icon.innerHTML = isTwo ? '<line x1="1" y1="4" x2="17" y2="4" stroke="var(--accent-green)" stroke-width="2.2" stroke-linecap="round"/><line x1="1" y1="10" x2="17" y2="10" stroke="var(--accent-green)" stroke-width="2.2" stroke-linecap="round"/>' : '<line x1="1" y1="7" x2="17" y2="7" stroke="var(--accent-green)" stroke-width="2.2" stroke-linecap="round"/>';  }
 
   // 선색상2 버튼: 선2모드면 보이고, 선1모드면 invisible(자리 유지)
   const btn2 = document.getElementById('colorTarget2Btn');
