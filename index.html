@@ -4131,6 +4131,8 @@ function renderGroupPreview() {
   const svg = document.getElementById('groupPreviewSvg');
   if (!svg) return;
   svg.innerHTML = '';
+  // 기존 hitDiv 정리
+  svg.parentElement.querySelectorAll('[data-hit-idx]').forEach(el => el.remove());
   const color = groupSheetData.color || '#72B878';
   const R = 32, PAD = 54;
   const NS = 'http://www.w3.org/2000/svg';
@@ -4184,8 +4186,8 @@ function renderGroupPreview() {
 
     // +/- 기호
     const sign = document.createElementNS(NS, 'text');
-    sign.setAttribute('x', p.x + 14);
-    sign.setAttribute('y', p.y - 14);
+    sign.setAttribute('x', p.x + 16);
+    sign.setAttribute('y', p.y - 16);
     sign.setAttribute('text-anchor', 'middle');
     sign.setAttribute('dominant-baseline', 'middle');
     sign.setAttribute('font-size', '18');
@@ -4198,25 +4200,57 @@ function renderGroupPreview() {
     // 노드 이름 텍스트
     const nameText = document.createElementNS(NS, 'text');
     nameText.setAttribute('x', p.x);
-    nameText.setAttribute('y', p.y + R + 13);
+    nameText.setAttribute('y', p.y + 8);
     nameText.setAttribute('text-anchor', 'middle');
     nameText.setAttribute('font-size', '11');
-    nameText.setAttribute('font-weight', '600');
-    nameText.setAttribute('fill', 'var(--text-primary)');
+    nameText.setAttribute('font-weight', '700');
+    nameText.setAttribute('fill', 'var(--surface)');
     nameText.style.pointerEvents = 'none';
     nameText.textContent = i === 0 ? '인물 추가' : '인물 제거';
     svg.appendChild(nameText);
 
-    // 탭 핸들러 — 투명 원으로 히트 영역
-    const hitCircle = document.createElementNS(NS, 'circle');
-    hitCircle.setAttribute('cx', p.x); hitCircle.setAttribute('cy', p.y); hitCircle.setAttribute('r', R);
-    hitCircle.setAttribute('fill', 'transparent');
-    hitCircle.style.cursor = 'pointer';
-    hitCircle.addEventListener('click', (e) => {
+    // 텍스트 그림자 효과용 배경 (먼저 추가)
+    const nameTextBg = document.createElementNS(NS, 'text');
+    nameTextBg.setAttribute('x', p.x);
+    nameTextBg.setAttribute('y', p.y + 8);
+    nameTextBg.setAttribute('text-anchor', 'middle');
+    nameTextBg.setAttribute('font-size', '11');
+    nameTextBg.setAttribute('font-weight', '700');
+    nameTextBg.setAttribute('fill', 'none');
+    nameTextBg.setAttribute('stroke', 'rgba(44,40,37,0.25)');
+    nameTextBg.setAttribute('stroke-width', '3');
+    nameTextBg.setAttribute('stroke-linejoin', 'round');
+    nameTextBg.style.pointerEvents = 'none';
+    nameTextBg.textContent = i === 0 ? '인물 추가' : '인물 제거';
+    svg.insertBefore(nameTextBg, nameText);
+
+    // 히트 영역 — SVG 위에 absolute div (SVG circle은 이벤트 버블링 문제)
+    // pts 좌표를 실제 화면 좌표로 변환해서 렌더 후 설정
+    const hitDiv = document.createElement('div');
+    hitDiv.style.cssText = 'position:absolute; border-radius:50%; cursor:pointer; z-index:10;';
+    hitDiv.dataset.hitIdx = i;
+    hitDiv.addEventListener('click', (e) => {
       e.stopPropagation();
-      openGroupPersonPopup(i === 0 ? 'add' : 'remove', hitCircle);
+      openGroupPersonPopup(i === 0 ? 'add' : 'remove', hitDiv);
     });
-    svg.appendChild(hitCircle);
+    svg.parentElement.appendChild(hitDiv);
+    // SVG 렌더 후 좌표 계산 (rAF)
+    const capturedP = { x: p.x, y: p.y };
+    requestAnimationFrame(() => {
+      const svgEl = document.getElementById('groupPreviewSvg');
+      if (!svgEl) return;
+      const svgRect = svgEl.getBoundingClientRect();
+      const scaleX = svgRect.width  / 300;
+      const scaleY = svgRect.height / 140;
+      const wrapRect = svgEl.parentElement.getBoundingClientRect();
+      const cx = svgRect.left - wrapRect.left + capturedP.x * scaleX;
+      const cy = svgRect.top  - wrapRect.top  + capturedP.y * scaleY;
+      const r  = R * Math.min(scaleX, scaleY);
+      hitDiv.style.left   = (cx - r) + 'px';
+      hitDiv.style.top    = (cy - r) + 'px';
+      hitDiv.style.width  = (r * 2) + 'px';
+      hitDiv.style.height = (r * 2) + 'px';
+    });
   });
 
   // 라벨 — rect + text, 탭하면 input 편집
