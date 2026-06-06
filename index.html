@@ -1926,6 +1926,16 @@ body { background:var(--surface); }
   <div id="tlEraList"></div>
 </div>
 
+<!-- 그룹 인물 추가/제거 팝업 -->
+<div class="tl-person-search-popup" id="groupPersonPopup" onclick="event.stopPropagation()">
+  <div class="tl-person-search-input-wrap">
+    <svg viewBox="0 0 256 256"><path d="M253.68,232.67l-48.59-48.59c11.39-15.61,18.12-34.84,18.12-55.64,0-52.17-42.3-94.47-94.47-94.47s-94.47,42.3-94.47,94.47,42.3,94.47,94.47,94.47c20.8,0,40.03-6.73,55.64-18.12l48.59,48.59c3.04,3.04,8,3.04,11.04,0l9.67-9.67c3.04-3.04,3.04-8,0-11.04ZM177.92,196.13c-8.09,5.75-20.8.41-31.6-7.04l-17.57-12.77-17.57,12.77c-10.8,7.45-23.51,12.79-31.6,7.04-7.97-5.92-6.82-19.65-3.07-32.23l6.71-20.66-17.57-12.77c-10.42-7.97-19.43-18.4-16.46-27.88,3.17-9.41,16.59-12.56,29.7-12.88h21.72l6.71-20.66c4.36-12.38,11.5-24.16,21.43-24.27,9.93.1,17.07,11.89,21.43,24.27l6.71,20.66h21.72c13.12.32,26.54,3.47,29.7,12.88,2.97,9.48-6.04,19.91-16.46,27.88l-17.57,12.77,6.71,20.66c3.75,12.58,4.9,26.31-3.07,32.23Z"/></svg>
+    <input class="tl-person-search-input" id="groupPersonSearchInput" placeholder="인물 검색..."
+      oninput="renderGroupPersonList(this.value)" autocomplete="off">
+  </div>
+  <div class="tl-person-search-list" id="groupPersonSearchList"></div>
+</div>
+
 <!-- 인물 검색 팝업 -->
 <div class="tl-person-search-popup" id="tlPersonSearchPopup" onclick="event.stopPropagation()">
   <div class="tl-person-search-input-wrap">
@@ -3979,6 +3989,78 @@ function darkenColor(hex) {
   return `rgb(${dr},${dg},${db})`;
 }
 
+// ── 그룹 수정 시트 내 인물 추가/제거 팝업 ──
+let _groupPersonMode = 'add'; // 'add' | 'remove'
+
+function openGroupPersonPopup(mode, anchorEl) {
+  _groupPersonMode = mode;
+  const popup = document.getElementById('groupPersonPopup');
+  const input = document.getElementById('groupPersonSearchInput');
+  input.value = '';
+  renderGroupPersonList('');
+
+  // 앵커 기준 위치 (SVG 내 원 클릭 → 팝업을 원 아래에)
+  const svgRect = document.getElementById('groupPreviewSvg').getBoundingClientRect();
+  const anchorRect = anchorEl.getBoundingClientRect();
+  const top  = anchorRect.bottom + 4;
+  const left = anchorRect.left + anchorRect.width / 2 - 75; // 팝업 width=150
+  popup.style.top  = top  + 'px';
+  popup.style.left = Math.max(8, left) + 'px';
+  popup.classList.add('open');
+
+  // 외부 탭 시 닫기
+  setTimeout(() => {
+    document.addEventListener('click', _closeGroupPersonPopup, { once: true });
+  }, 0);
+
+  requestAnimationFrame(() => input.focus());
+}
+
+function _closeGroupPersonPopup() {
+  document.getElementById('groupPersonPopup').classList.remove('open');
+}
+
+function renderGroupPersonList(query) {
+  const list = document.getElementById('groupPersonSearchList');
+  list.innerHTML = '';
+  const allPersons = (STORY_DB[PROJECT_ID] || []).filter(i => i.type === '인물');
+  const currentIds = groupSheetData.nodeIds || [];
+
+  // 추가: 미포함 인물 / 제거: 포함 인물
+  const filtered = allPersons.filter(p =>
+    _groupPersonMode === 'add'
+      ? !currentIds.includes(p.id)
+      :  currentIds.includes(p.id)
+  ).filter(p =>
+    !query || p.name.includes(query)
+  );
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'tl-person-search-empty';
+    empty.textContent = _groupPersonMode === 'add' ? '추가할 인물 없음' : '제거할 인물 없음';
+    list.appendChild(empty);
+    return;
+  }
+
+  filtered.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'tl-person-search-item';
+    item.style.padding = '4px 2px';
+    item.textContent = p.name || '(이름 없음)';
+    item.addEventListener('click', () => {
+      if (_groupPersonMode === 'add') {
+        if (!groupSheetData.nodeIds.includes(p.id)) groupSheetData.nodeIds.push(p.id);
+      } else {
+        groupSheetData.nodeIds = groupSheetData.nodeIds.filter(id => id !== p.id);
+      }
+      _closeGroupPersonPopup();
+      renderGroupPreview(); // 미리보기 갱신
+    });
+    list.appendChild(item);
+  });
+}
+
 // ── 그룹 추가/수정 바텀시트 열기 ──
 function onGraphAddGroup() {
   const ids = graphSelectedIds.slice();
@@ -4066,6 +4148,42 @@ function renderGroupPreview() {
     iconSvg.appendChild(iconPath);
     iconG.appendChild(iconSvg);
     svg.appendChild(iconG);
+
+    // +/- 기호
+    const sign = document.createElementNS(NS, 'text');
+    sign.setAttribute('x', p.x + 14);
+    sign.setAttribute('y', p.y - 14);
+    sign.setAttribute('text-anchor', 'middle');
+    sign.setAttribute('dominant-baseline', 'middle');
+    sign.setAttribute('font-size', '18');
+    sign.setAttribute('font-weight', '700');
+    sign.setAttribute('fill', i === 0 ? 'var(--accent-green)' : 'var(--red)');
+    sign.style.pointerEvents = 'none';
+    sign.textContent = i === 0 ? '+' : '−';
+    svg.appendChild(sign);
+
+    // 노드 이름 텍스트
+    const nameText = document.createElementNS(NS, 'text');
+    nameText.setAttribute('x', p.x);
+    nameText.setAttribute('y', p.y + R + 13);
+    nameText.setAttribute('text-anchor', 'middle');
+    nameText.setAttribute('font-size', '11');
+    nameText.setAttribute('font-weight', '600');
+    nameText.setAttribute('fill', 'var(--text-primary)');
+    nameText.style.pointerEvents = 'none';
+    nameText.textContent = i === 0 ? '인물 추가' : '인물 제거';
+    svg.appendChild(nameText);
+
+    // 탭 핸들러 — 투명 원으로 히트 영역
+    const hitCircle = document.createElementNS(NS, 'circle');
+    hitCircle.setAttribute('cx', p.x); hitCircle.setAttribute('cy', p.y); hitCircle.setAttribute('r', R);
+    hitCircle.setAttribute('fill', 'transparent');
+    hitCircle.style.cursor = 'pointer';
+    hitCircle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openGroupPersonPopup(i === 0 ? 'add' : 'remove', hitCircle);
+    });
+    svg.appendChild(hitCircle);
   });
 
   // 라벨 — rect + text, 탭하면 input 편집
@@ -9597,6 +9715,8 @@ Object.assign(window, {
   doLogout,
   onGraphAddGroup,
   openGroupSheet,
+  openGroupPersonPopup,
+  renderGroupPersonList,
   closeGroupSheet,
   onGroupSheetOverlayClick, onGroupLabelInput,
   saveGroupSheet,
