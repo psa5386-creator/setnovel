@@ -3714,6 +3714,17 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
   const origY = pos.y;
   let moved = false;
 
+  function getHoveredGroupLabel(clientX, clientY) {
+    const labels = document.querySelectorAll('.graph-group-label');
+    for (const lbl of labels) {
+      const r = lbl.getBoundingClientRect();
+      if (clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom) {
+        return lbl;
+      }
+    }
+    return null;
+  }
+
   function onMove(ev) {
     moved = true;
     const newX = ev.clientX - startX;
@@ -3729,9 +3740,8 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
     if (moved && PROJECT_ID) {
-      // 그룹 라벨 위에 드롭했는지 확인
-      const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
-      const labelEl = dropEl?.closest?.('.graph-group-label');
+      // 그룹 라벨 위에 드롭했는지 확인 (getBoundingClientRect 기반)
+      const labelEl = getHoveredGroupLabel(ev.clientX, ev.clientY);
       if (labelEl) {
         const groupId = labelEl.dataset.groupId;
         const groups = getGraphGroups();
@@ -3744,7 +3754,6 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
           const item = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
           if (item) item.graphPos = { x: origX, y: origY };
           updateGraphEdges();
-          // 그룹 포함 확인 바텀시트
           openGroupConfirmSheet('include', personId, groupId, `"${group.name}"에 포함`);
           return;
         }
@@ -3764,7 +3773,6 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
       );
 
       if (occupied) {
-        // 원래 위치로 복귀
         pos.x = origX; pos.y = origY;
         nodeEl.style.left = origX + 'px';
         nodeEl.style.top  = origY + 'px';
