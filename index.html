@@ -4711,10 +4711,18 @@ function updateGraphEdges() {
     const dirSignE = nye <= 0 ? 1 : -1;
     const isLabel3 = lbl.dataset.label2 === '1';
     const edgeHasLine2 = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
-    const offset = edgeHasLine2 ? (isLabel3 ? 7.5 * dirSignE : -7.5 * dirSignE) : 0;
+    let outerSign;
+    let offset;
+    if (!edgeHasLine2) {
+      offset = 0;
+      outerSign = undefined; // 선1: 항상 위
+    } else {
+      offset = isLabel3 ? 7.5 * dirSignE : -7.5 * dirSignE;
+      outerSign = isLabel3 ? dirSignE : -dirSignE;
+    }
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
-    positionEdgeLabel(lbl, lfc, ltc, offset, ic(f), ic(t));
+    positionEdgeLabel(lbl, lfc, ltc, outerSign);
   });
 }
 
