@@ -3576,7 +3576,7 @@ function renderGraphView() {
 
     function renderOneLine(label, dir, color, offset, isLabel3 = false) {
       // color 기본값: 선1 색상 또는 기본색
-      const strokeColor = color || edge.color1 || '#2C2825';
+      const strokeColor = color || edge.color1 || '#9E9E9E';
       const {x1, y1, x2, y2} = trimLineToNodes(
         {x: fc.x + nx*offset, y: fc.y + ny*offset},
         {x: tc.x + nx*offset, y: tc.y + ny*offset}
@@ -4217,7 +4217,7 @@ function execGroupConfirm() {
 //  관계 추가 바텀시트
 // ════════════════════════════════════════
 const RELATION_COLORS = ['#6B6B6B','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
-let relationSheetData = { fromId: null, toId: null, label1: '', dir1: 'none', color1: '#2C2825', label2: '', dir2: 'none', color2: '#2C2825', label3: '', dir3: 'none', color3: '#2C2825', editEdgeId: null };
+let relationSheetData = { fromId: null, toId: null, label1: '', dir1: 'none', color1: '#9E9E9E', label2: '', dir2: 'none', color2: '#9E9E9E', label3: '', dir3: 'none', color3: '#9E9E9E', editEdgeId: null };
 let relationLineMode = 1; // 1 or 2
 
 function getPersonName(personId) {
@@ -4238,13 +4238,13 @@ function openRelationSheet(fromId, toId) {
     fromId, toId,
     label1: existing?.label1 || '',
     dir1:   existing?.dir1   || 'none',
-    color1: existing?.color1 || '#2C2825',
+    color1: existing?.color1 || '#9E9E9E',
     label2: existing?.label2 || '',
     dir2:   existing?.dir2   || 'none',
-    color2: existing?.color2 || '#2C2825',
+    color2: existing?.color2 || '#9E9E9E',
     label3: existing?.label3 || '',
     dir3:   existing?.dir3   || 'none',
-    color3: existing?.color3 || '#2C2825',
+    color3: existing?.color3 || '#9E9E9E',
     editEdgeId: existing?.id || null,
   };
 
@@ -4300,10 +4300,10 @@ function saveRelationSheet() {
   // 선2 모드 두 번째/세 번째 선
   const label2 = isTwo ? (document.getElementById('relationLabelInput2')?.value.trim() || '') : '';
   const dir2   = isTwo ? relationSheetData.dir2 : 'none';
-  const color2 = isTwo ? relationSheetData.color2 : '#2C2825';
+  const color2 = isTwo ? relationSheetData.color2 : '#9E9E9E';
   const label3 = isTwo ? (document.getElementById('relationLabelInput3')?.value.trim() || '') : '';
   const dir3   = isTwo ? relationSheetData.dir3 : 'none';
-  const color3 = isTwo ? relationSheetData.color3 : '#2C2825';
+  const color3 = isTwo ? relationSheetData.color3 : '#9E9E9E';
 
   if (editEdgeId) {
     const edge = edges.find(e => e.id === editEdgeId);
@@ -4551,7 +4551,7 @@ function updateGraphEdges() {
       const lineEl = document.createElementNS(NS, 'line');
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
-      lineEl.setAttribute('stroke', color || '#2C2825');
+      lineEl.setAttribute('stroke', color || '#9E9E9E');
       lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
@@ -4561,7 +4561,7 @@ function updateGraphEdges() {
         const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
-        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || '#2C2825');
+        pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || '#9E9E9E');
         pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
@@ -4571,7 +4571,7 @@ function updateGraphEdges() {
     }
     const hasLine2e = edge.label2 || edge.dir2 !== 'none' || edge.label3 || edge.dir3 !== 'none';
     if (!hasLine2e) {
-      drawOneLine(edge.dir1, edge.color1 || '#2C2825', 0);
+      drawOneLine(edge.dir1, edge.color1 || '#9E9E9E', 0);
     } else {
       drawOneLine(edge.dir2, edge.color2 || '#2C2825', -7.5 * dirSign);
       if (edge.label3 || edge.dir3 !== 'none') {
