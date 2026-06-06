@@ -3619,18 +3619,10 @@ function renderGraphView() {
         lbl.textContent = label;
         lbl.style.cursor = 'pointer';
         lbl.dataset.edgeId = edge.id;
-        // isLabel3: 선3(offset>0 측)은 선2와 반대쪽에 라벨 배치
         if (isLabel3) lbl.dataset.label2 = '1';
         const lfc = {x: fc.x + nx*offset, y: fc.y + ny*offset};
         const ltc = {x: tc.x + nx*offset, y: tc.y + ny*offset};
-        let lblBelow;
-        if (isVertical) {
-          lblBelow = false;
-        } else {
-          // offset>0(선3) → isLabel3=true → 선2와 반대방향
-          lblBelow = isLabel3 ? !goingLeft : goingLeft;
-        }
-        positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
+        positionEdgeLabel(lbl, lfc, ltc, offset, fc, tc);
         lbl.addEventListener('pointerdown', ev => { ev.stopPropagation(); });
         lbl.addEventListener('click', ev => { ev.stopPropagation(); openRelationSheet(edge.from, edge.to); });
         world.appendChild(lbl);
@@ -4375,47 +4367,49 @@ function cycleRelationDir3() {
   renderRelationDir3();
 }
 
+function drawRelationLineSvg(svgId, dir, color) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  svg.innerHTML = '';
+  svg.style.overflow = 'visible';
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = svg.clientWidth || svg.getBoundingClientRect().width || svg.parentElement?.clientWidth || 200;
+  const cy = 9;
+  const ah = 5.5;
+  const x1 = 0, x2 = W;
+  const line = document.createElementNS(NS, 'line');
+  line.setAttribute('x1', x1); line.setAttribute('y1', cy);
+  line.setAttribute('x2', x2); line.setAttribute('y2', cy);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '2.5');
+  line.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(line);
+  function drawArrow(tx, ty, fx, fy) {
+    const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
+    const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
+    const pl = document.createElementNS(NS, 'polyline');
+    pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
+    pl.setAttribute('fill','none'); pl.setAttribute('stroke', color);
+    pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+    svg.appendChild(pl);
+  }
+  if (dir === 'end'   || dir === 'both') drawArrow(x2, cy, x1, cy);
+  if (dir === 'start' || dir === 'both') drawArrow(x1, cy, x2, cy);
+}
+
 function renderRelationDir() {
   const { dir1, color1 } = relationSheetData;
-  ['relationDirLine','relationDirLine1b'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.setAttribute('stroke', color1);
-  });
-  ['relationArrowEnd','relationArrowEnd1b'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    el.setAttribute('stroke', color1);
-    el.style.display = (dir1 === 'end' || dir1 === 'both') ? '' : 'none';
-  });
-  ['relationArrowStart','relationArrowStart1b'].forEach(id => {
-    const el = document.getElementById(id); if (!el) return;
-    el.setAttribute('stroke', color1);
-    el.style.display = (dir1 === 'start' || dir1 === 'both') ? '' : 'none';
-  });
+  drawRelationLineSvg('relationLineSvg', dir1, color1);
 }
 
 function renderRelationDir2() {
-  const line        = document.getElementById('relationDirLine2');
-  const arrowEnd    = document.getElementById('relationArrowEnd2');
-  const arrowStart  = document.getElementById('relationArrowStart2');
-  if (!line) return;
   const { dir2, color2 } = relationSheetData;
-  line.setAttribute('stroke', color2);
-  arrowEnd.setAttribute('stroke', color2);
-  arrowStart.setAttribute('stroke', color2);
-  arrowEnd.style.display   = (dir2 === 'end'   || dir2 === 'both') ? '' : 'none';
-  arrowStart.style.display = (dir2 === 'start' || dir2 === 'both') ? '' : 'none';
+  drawRelationLineSvg('relationLineSvg2', dir2, color2);
 }
 
 function renderRelationDir3() {
-  const line        = document.getElementById('relationDirLine3');
-  const arrowEnd    = document.getElementById('relationArrowEnd3');
-  const arrowStart  = document.getElementById('relationArrowStart3');
-  if (!line) return;
   const { dir3, color3 } = relationSheetData;
-  line.setAttribute('stroke', color3);
-  arrowEnd.setAttribute('stroke', color3);
-  arrowStart.setAttribute('stroke', color3);
-  arrowEnd.style.display   = (dir3 === 'end'   || dir3 === 'both') ? '' : 'none';
-  arrowStart.style.display = (dir3 === 'start' || dir3 === 'both') ? '' : 'none';
+  drawRelationLineSvg('relationLineSvg3', dir3, color3);
 }
 
 let colorTarget = 1; // 1 또는 2
@@ -4480,37 +4474,45 @@ function trimLineToNodes(fc, tc) {
 
 // 라벨 위치/회전 계산
 // centerX: 두 노드 중심의 x 평균 (오프셋 없는 진짜 중앙선)
-function positionEdgeLabel(lbl, fc, tc, lblBelow = false, centerX = null) {
-  const OFFSET = 10; // 선 중심에서 라벨 센터까지 거리
+function positionEdgeLabel(lbl, fc, tc, lineOffset = 0, origFc = null, origTc = null) {
+  const OFFSET = 10;
   const mx = (fc.x + tc.x) / 2;
   const my = (fc.y + tc.y) / 2;
-  const dx = tc.x - fc.x;
-  const dy = tc.y - fc.y;
-  const angle = Math.atan2(dy, dx); // 선 각도 (라디안)
+  // 법선 방향은 원래 선(offset 없는) 기준으로 계산
+  const rfc = origFc || fc;
+  const rtc = origTc || tc;
+  const dx = rtc.x - rfc.x;
+  const dy = rtc.y - rfc.y;
+  const angle = Math.atan2(dy, dx);
 
-  // 수직 방향 벡터 (-sin, cos) = 선에 수직인 "위쪽"
-  let nx = -Math.sin(angle);
-  let ny =  Math.cos(angle);
+  let fnx = -Math.sin(angle);
+  let fny =  Math.cos(angle);
 
-  // ny > 0 이면 화면 아래 방향 → 반전
-  if (ny > 0) { nx = -nx; ny = -ny; }
-
-  // 수직선 예외 (dx ≈ 0): 진짜 중앙선(centerX) 기준으로 선이 오른쪽이면 라벨도 오른쪽
   if (Math.abs(dx) < 1) {
-    const ref = centerX !== null ? centerX : mx;
-    nx = fc.x >= ref ? 1 : -1;
-    ny = 0;
+    // 수직선
+    if (lineOffset === 0) {
+      // 선1: 항상 왼쪽
+      fnx = -1;
+    } else {
+      // 선2/3: 선의 실제 x = origFc.x + fnx*lineOffset 기준
+      const lineX = rfc.x + fnx * lineOffset;
+      const centerX = (rfc.x + rtc.x) / 2;
+      fnx = lineX <= centerX ? -1 : 1;
+    }
+    fny = 0;
   }
 
-  // lblBelow: 선 아래쪽에 배치 (선2 라벨)
-  const sign = lblBelow ? -1 : 1;
-  const lx = mx + nx * OFFSET * sign;
-  const ly = my + ny * OFFSET * sign;
+  // dirSign: 선2/3에서 법선 y성분이 아래를 향하면 offset 부호 반전
+  const isVertical = Math.abs(dx) < 1;
+  const dirSignLbl = (!isVertical && lineOffset !== 0 && fny > 0) ? -1 : 1;
+  const sign = isVertical ? 1 : (lineOffset > 0 ? -1 : 1) * dirSignLbl;
 
-  // 회전각: 글자 뒤집힘 방지 (-90~90도 범위로)
+  const lx = mx + fnx * OFFSET * sign;
+  const ly = my + fny * OFFSET * sign;
+
+  // 회전각
   let deg = angle * 180 / Math.PI;
   if (Math.abs(dx) < 1) {
-    // 수직선: 항상 -90도로 고정 (텍스트 방향 통일)
     deg = -90;
   } else {
     if (deg > 90)  deg -= 180;
@@ -4668,16 +4670,7 @@ function updateGraphEdges() {
     const offset = edgeHasLine2 ? (isLabel3 ? 7.5 * dirSignE : -7.5 * dirSignE) : 0;
     const lfc = {x: fc.x + nxe*offset, y: fc.y + nye*offset};
     const ltc = {x: tc.x + nxe*offset, y: tc.y + nye*offset};
-    const angleE = Math.atan2(dye, dxe);
-    const isVerticalE = Math.abs(dxe) < 1;
-    const goingLeftE = Math.abs(angleE) > Math.PI / 2;
-    let lblBelow;
-    if (isVerticalE) {
-      lblBelow = false;
-    } else {
-      lblBelow = isLabel3 ? !goingLeftE : goingLeftE;
-    }
-    positionEdgeLabel(lbl, lfc, ltc, lblBelow, (fc.x + tc.x) / 2);
+    positionEdgeLabel(lbl, lfc, ltc, offset, ic(f), ic(t));
   });
 }
 
