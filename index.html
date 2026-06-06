@@ -1847,17 +1847,12 @@ body { background:var(--surface); }
       <div class="era-sheet-back" onclick="closeRelationSheet()">
         <svg viewBox="0 0 256 256"><path d="M140.22,236L25.23,138.25c-5.93-5.04-5.93-14.21,0-19.25L140.22,21.26" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/></svg>
       </div>
-      <span class="era-sheet-title" id="relationSheetTitle">관계 추가</span>
+      <span class="era-sheet-title" id="relationSheetTitle" onclick="toggleRelationLineMode()"
+        style="cursor:pointer; display:flex; align-items:center; gap:6px; justify-content:center;">
+        <span id="relationSheetTitleText">관계 추가</span>
+        <span id="relationLineModeIcon" style="font-size:13px; color:var(--accent-green); font-weight:700;">—</span>
+      </span>
       <button class="era-sheet-save" onclick="saveRelationSheet()">저장</button>
-    </div>
-
-    <!-- 선1/2 토글 + 색상1/2 버튼 같은 줄 -->
-    <div style="display:flex;align-items:center;padding:8px 15px 4px;gap:6px;">
-      <button id="relationLineToggle1" onclick="setRelationLineMode(1)"
-        style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;">선 1</button>
-      <button id="relationLineToggle2" onclick="setRelationLineMode(2)"
-        style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;">선 2</button>
-      <div id="colorTargetBtns" style="display:none;"><!-- 통합버튼으로 대체 --></div>
     </div>
 
     <!-- 인물 + 관계 입력 행 -->
@@ -1872,15 +1867,12 @@ body { background:var(--surface); }
 
       <!-- 선 영역 -->
       <div class="relation-center">
-        <!-- 선1 모드: 높이를 선2와 통일 -->
         <div id="relation1Row" style="display:flex;flex-direction:column;height:92px;padding-top:17px;">
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
             <svg class="relation-line-svg" id="relationLineSvg"></svg>
           </div>
         </div>
-        <!-- 선2 모드: 라벨1→선1→선2→라벨2, 두 선 중심이 노드 원 중심에 오도록 -->
-        <!-- 선2 모드: label2→선2→스페이서→선3→label3 -->
         <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir2()">
@@ -1903,11 +1895,15 @@ body { background:var(--surface); }
       </div>
     </div>
 
-    <!-- 색상칩 (항상 표시, 노드 아래) -->
-    <div style="display:flex;align-items:center;padding:6px 15px 12px;flex-shrink:0;position:relative;">
+    <!-- 색상칩 행 -->
+    <div style="display:flex;align-items:center;padding:6px 15px 12px;gap:6px;flex-shrink:0;">
+      <!-- 선색상1 (선1모드: 라벨만, 선2모드: 클릭 버튼) -->
+      <div id="colorTarget1Btn"
+        style="font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;flex-shrink:0;white-space:nowrap;">선색상1</div>
       <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;justify-content:center;flex:1;"></div>
-      <button id="colorTargetToggleBtn" onclick="toggleColorTarget()"
-        style="display:none;position:absolute;right:15px;font-size:11px;font-weight:700;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;cursor:pointer;flex-shrink:0;">1</button>
+      <!-- 선색상2 (선2모드만 표시) -->
+      <div id="colorTarget2Btn" onclick="setColorTarget(2)"
+        style="display:none;font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;flex-shrink:0;white-space:nowrap;">선색상2</div>
     </div>
 
   </div>
@@ -4541,41 +4537,48 @@ function saveRelationSheet() {
 
 // 선 방향 순환: none → end → start → both
 
+function toggleRelationLineMode() {
+  setRelationLineMode(relationLineMode === 1 ? 2 : 1);
+}
+
 function setRelationLineMode(mode) {
   relationLineMode = mode;
   const row1 = document.getElementById('relation1Row');
   const row2 = document.getElementById('relation2Row');
-  const t1 = document.getElementById('relationLineToggle1');
-  const t2 = document.getElementById('relationLineToggle2');
   const isTwo = mode === 2;
 
-  const colorBtns = document.getElementById('colorTargetBtns');
-  if (colorBtns) colorBtns.style.display = 'none'; // 통합버튼으로 대체
-  const toggleBtn = document.getElementById('colorTargetToggleBtn');
-  if (toggleBtn) toggleBtn.style.display = isTwo ? 'block' : 'none';
+  // 타이틀 아이콘
+  const icon = document.getElementById('relationLineModeIcon');
+  if (icon) icon.textContent = isTwo ? '=' : '—';
+
+  // 선색상2 버튼 표시/숨김
+  const btn2 = document.getElementById('colorTarget2Btn');
+  if (btn2) btn2.style.display = isTwo ? 'block' : 'none';
+
+  // 선색상1: 선2모드만 클릭 가능
+  const btn1 = document.getElementById('colorTarget1Btn');
+  if (btn1) {
+    btn1.style.cursor = isTwo ? 'pointer' : 'default';
+    btn1.onclick = isTwo ? () => setColorTarget(1) : null;
+  }
 
   row1.style.display = isTwo ? 'none' : 'flex';
   row2.style.display = isTwo ? 'flex' : 'none';
 
-  t1.style.background   = !isTwo ? 'var(--accent-green)' : 'none';
-  t1.style.borderColor  = !isTwo ? 'var(--accent-green)' : 'var(--border)';
-  t1.style.color        = !isTwo ? '#fff' : 'var(--text-secondary)';
-  t2.style.background   = isTwo  ? 'var(--accent-green)' : 'none';
-  t2.style.borderColor  = isTwo  ? 'var(--accent-green)' : 'var(--border)';
-  t2.style.color        = isTwo  ? '#fff' : 'var(--text-secondary)';
-
   if (isTwo) {
+    setColorTarget(1);
     requestAnimationFrame(() => {
       renderRelationDir2();
       renderRelationDir3();
     });
   } else {
+    setColorTarget(1);
     requestAnimationFrame(() => {
       renderRelationDir();
     });
-    setColorTarget(1);
   }
 }
+
 
 function cycleRelationDir() {
   const dirs = ['none', 'end', 'start', 'both'];
@@ -4656,12 +4659,19 @@ function toggleColorTarget() {
 function setColorTarget(n) {
   colorTarget = n;
   window.colorTarget = n;
-  const btn = document.getElementById('colorTargetToggleBtn');
-  if (btn) {
-    btn.textContent = String(n);
-    btn.style.background = 'var(--accent-green)';
-    btn.style.borderColor = 'var(--accent-green)';
-    btn.style.color = '#fff';
+  const btn1 = document.getElementById('colorTarget1Btn');
+  const btn2 = document.getElementById('colorTarget2Btn');
+  if (btn1) {
+    const active = n === 1;
+    btn1.style.background  = active ? 'var(--accent-green)' : 'none';
+    btn1.style.borderColor = active ? 'var(--accent-green)' : 'var(--border)';
+    btn1.style.color       = active ? '#fff' : 'var(--text-secondary)';
+  }
+  if (btn2) {
+    const active = n === 2;
+    btn2.style.background  = active ? 'var(--accent-green)' : 'none';
+    btn2.style.borderColor = active ? 'var(--accent-green)' : 'var(--border)';
+    btn2.style.color       = active ? '#fff' : 'var(--text-secondary)';
   }
   renderRelationColors();
 }
@@ -9980,6 +9990,7 @@ Object.assign(window, {
   saveEraSheet,
   saveEras,
   setRelationLineMode,
+  toggleRelationLineMode,
   setColorTarget,
   toggleColorTarget,
   cycleRelationDir2,
