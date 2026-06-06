@@ -1896,14 +1896,14 @@ body { background:var(--surface); }
     </div>
 
     <!-- 색상칩 행 -->
-    <div style="display:flex;align-items:center;padding:6px 15px 12px;gap:6px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;padding:6px 15px 20px;gap:6px;flex-shrink:0;">
       <!-- 선색상1 (선1모드: 라벨만, 선2모드: 클릭 버튼) -->
       <div id="colorTarget1Btn"
-        style="font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;flex-shrink:0;white-space:nowrap;">선색상1</div>
+        style="font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;flex-shrink:0;white-space:nowrap;min-width:52px;text-align:center;">선색상1</div>
       <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;justify-content:center;flex:1;"></div>
-      <!-- 선색상2 (선2모드만 표시) -->
+      <!-- 선색상2 (선2모드만 표시, 선1모드엔 동일 너비 투명 placeholder) -->
       <div id="colorTarget2Btn" onclick="setColorTarget(2)"
-        style="display:none;font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;flex-shrink:0;white-space:nowrap;">선색상2</div>
+        style="font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;flex-shrink:0;white-space:nowrap;min-width:52px;text-align:center;visibility:hidden;">선색상2</div>
     </div>
 
   </div>
@@ -4481,7 +4481,7 @@ function openRelationSheet(fromId, toId) {
   document.getElementById('relationLabelInput').value   = existing?.label1 || '';
   document.getElementById('relationLabelInput2').value   = existing?.label2 || '';
   document.getElementById('relationLabelInput3').value   = existing?.label3 || '';
-  document.getElementById('relationSheetTitle').textContent = existing ? '관계 수정' : '관계 추가';
+  document.getElementById('relationSheetTitleText').textContent = existing ? '관계 수정' : '관계 추가';
 
   // 선2 데이터 있으면 2선 모드, 없으면 1선 모드
   const hasLine2 = existing && (existing.label2 || existing.dir2 !== 'none' || existing.label3 || existing.dir3 !== 'none');
@@ -4551,9 +4551,9 @@ function setRelationLineMode(mode) {
   const icon = document.getElementById('relationLineModeIcon');
   if (icon) icon.textContent = isTwo ? '=' : '—';
 
-  // 선색상2 버튼 표시/숨김
+  // 선색상2 버튼: 선2모드면 보이고, 선1모드면 invisible(자리 유지)
   const btn2 = document.getElementById('colorTarget2Btn');
-  if (btn2) btn2.style.display = isTwo ? 'block' : 'none';
+  if (btn2) btn2.style.visibility = isTwo ? 'visible' : 'hidden';
 
   // 선색상1: 선2모드만 클릭 가능
   const btn1 = document.getElementById('colorTarget1Btn');
