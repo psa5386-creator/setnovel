@@ -4198,19 +4198,24 @@ function renderGroupPreview() {
     sign.textContent = i === 0 ? '+' : '−';
     svg.appendChild(sign);
 
-    // 노드 이름 텍스트 — 관계도 인물명과 동일 스타일, 원 아래
+    // 노드 이름 텍스트 — graph-node-name과 동일: 원 안 하단, 흰 stroke
     const nameText = document.createElementNS(NS, 'text');
     nameText.setAttribute('x', p.x);
-    nameText.setAttribute('y', p.y + R + 13);
+    nameText.setAttribute('y', p.y + R - 8);
     nameText.setAttribute('text-anchor', 'middle');
-    nameText.setAttribute('font-size', '11');
-    nameText.setAttribute('font-weight', '600');
-    nameText.setAttribute('fill', 'var(--text-primary)');
+    nameText.setAttribute('dominant-baseline', 'auto');
+    nameText.setAttribute('font-size', '12');
+    nameText.setAttribute('font-weight', '700');
+    nameText.setAttribute('fill', '#2C2825');
+    nameText.setAttribute('stroke', '#fff');
+    nameText.setAttribute('stroke-width', '3');
+    nameText.setAttribute('paint-order', 'stroke fill');
     nameText.style.pointerEvents = 'none';
     nameText.textContent = i === 0 ? '인물 추가' : '인물 제거';
     svg.appendChild(nameText);
 
     // 히트 영역 — body fixed (era-sheet overflow:hidden 우회)
+    // 시트 오픈 애니메이션(0.3s) 후 위치 계산
     const hitDiv = document.createElement('div');
     hitDiv.style.cssText = 'position:fixed; border-radius:50%; cursor:pointer; z-index:450;';
     hitDiv.dataset.hitIdx = String(i);
@@ -4220,7 +4225,7 @@ function renderGroupPreview() {
     });
     document.body.appendChild(hitDiv);
     const capturedP = { x: p.x, y: p.y };
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       const svgEl = document.getElementById('groupPreviewSvg');
       if (!svgEl) return;
       const svgRect = svgEl.getBoundingClientRect();
@@ -4233,7 +4238,7 @@ function renderGroupPreview() {
       hitDiv.style.top    = (cy - r) + 'px';
       hitDiv.style.width  = (r * 2) + 'px';
       hitDiv.style.height = (r * 2) + 'px';
-    });
+    }, 320);
   });
 
   // 라벨 — rect + text, 탭하면 input 편집
