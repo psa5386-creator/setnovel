@@ -1871,32 +1871,20 @@ body { background:var(--surface); }
         <!-- 선1 모드: 높이를 선2와 통일 -->
         <div id="relation1Row" style="display:flex;flex-direction:column;height:92px;padding-top:17px;">
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
-          <div class="relation-line-wrap" onclick="cycleRelationDir()" style="position:relative;height:18px;">
-            <svg style="width:100%;height:18px;display:block;" preserveAspectRatio="none" viewBox="0 0 1 1">
-              <line id="relationDirLine" x1="0" y1="0.5" x2="1" y2="0.5" stroke-width="0.15"/>
-            </svg>
-            <svg id="relationArrowStart" viewBox="0 0 10 18" width="10" height="18" style="position:absolute;left:0;top:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="8,2 2,9 8,16"/></svg>
-            <svg id="relationArrowEnd"   viewBox="0 0 10 18" width="10" height="18" style="position:absolute;right:0;top:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="2,2 8,9 2,16"/></svg>
+          <div class="relation-line-wrap" onclick="cycleRelationDir()" style="height:18px;">
+            <svg id="relationLineSvg" style="width:100%;height:18px;display:block;"></svg>
           </div>
         </div>
         <!-- 선2 모드: 라벨1→선1→선2→라벨2, 두 선 중심이 노드 원 중심에 오도록 -->
         <!-- 선2 모드: label2→선2→스페이서→선3→label3 -->
         <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
-          <div class="relation-line-wrap" onclick="cycleRelationDir2()" style="position:relative;height:18px;">
-            <svg style="width:100%;height:18px;display:block;" preserveAspectRatio="none" viewBox="0 0 1 1">
-              <line id="relationDirLine2" x1="0" y1="0.5" x2="1" y2="0.5" stroke-width="0.15"/>
-            </svg>
-            <svg id="relationArrowStart2" viewBox="0 0 10 18" width="10" height="18" style="position:absolute;left:0;top:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="8,2 2,9 8,16"/></svg>
-            <svg id="relationArrowEnd2"   viewBox="0 0 10 18" width="10" height="18" style="position:absolute;right:0;top:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="2,2 8,9 2,16"/></svg>
+          <div class="relation-line-wrap" onclick="cycleRelationDir2()" style="height:18px;">
+            <svg id="relationLineSvg2" style="width:100%;height:18px;display:block;"></svg>
           </div>
           <div style="height:8px;flex-shrink:0;"></div>
-          <div class="relation-line-wrap" onclick="cycleRelationDir3()" style="position:relative;height:18px;">
-            <svg style="width:100%;height:18px;display:block;" preserveAspectRatio="none" viewBox="0 0 1 1">
-              <line id="relationDirLine3" x1="0" y1="0.5" x2="1" y2="0.5" stroke-width="0.15"/>
-            </svg>
-            <svg id="relationArrowStart3" viewBox="0 0 10 18" width="10" height="18" style="position:absolute;left:0;top:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="8,2 2,9 8,16"/></svg>
-            <svg id="relationArrowEnd3"   viewBox="0 0 10 18" width="10" height="18" style="position:absolute;right:0;top:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="2,2 8,9 2,16"/></svg>
+          <div class="relation-line-wrap" onclick="cycleRelationDir3()" style="height:18px;">
+            <svg id="relationLineSvg3" style="width:100%;height:18px;display:block;"></svg>
           </div>
           <input class="relation-label-input" id="relationLabelInput3" placeholder="관계3" autocomplete="off">
         </div>
@@ -4267,11 +4255,14 @@ function openRelationSheet(fromId, toId) {
   // 선2 데이터 있으면 2선 모드, 없으면 1선 모드
   const hasLine2 = existing && (existing.label2 || existing.dir2 !== 'none' || existing.label3 || existing.dir3 !== 'none');
   setRelationLineMode(hasLine2 ? 2 : 1);
-
-  renderRelationDir();
-  renderRelationDir2();
   renderRelationColors();
   document.getElementById('relationSheetOverlay').classList.add('open');
+  // SVG clientWidth가 레이아웃 후에 확정되므로 rAF 후 렌더
+  requestAnimationFrame(() => {
+    renderRelationDir();
+    renderRelationDir2();
+    renderRelationDir3();
+  });
 }
 
 function closeRelationSheet() {
@@ -4370,45 +4361,55 @@ function cycleRelationDir3() {
   renderRelationDir3();
 }
 
+function drawRelationLineSvg(svgId, dir, color) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  svg.innerHTML = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = svg.clientWidth || svg.getBoundingClientRect().width || 200;
+  const H = 18;
+  const cy = H / 2;
+  const ah = 5.5; // 관계도와 동일
+  // 선 끝점
+  const x1 = 0, x2 = W;
+  // 화살촉이 있을 때 선 끝을 화살촉 꼭짓점(끝점)까지만
+  const lx1 = (dir === 'start' || dir === 'both') ? ah : x1;
+  const lx2 = (dir === 'end'   || dir === 'both') ? x2 - ah : x2;
+  // 선
+  const line = document.createElementNS(NS, 'line');
+  line.setAttribute('x1', lx1); line.setAttribute('y1', cy);
+  line.setAttribute('x2', lx2); line.setAttribute('y2', cy);
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '2.5');
+  line.setAttribute('stroke-linecap', 'round');
+  svg.appendChild(line);
+  // 화살촉 (관계도와 동일한 공식)
+  function drawArrow(tx, ty, fx, fy) {
+    const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
+    const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
+    const pl = document.createElementNS(NS, 'polyline');
+    pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
+    pl.setAttribute('fill','none'); pl.setAttribute('stroke', color);
+    pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+    svg.appendChild(pl);
+  }
+  if (dir === 'end'   || dir === 'both') drawArrow(x2, cy, x1, cy);
+  if (dir === 'start' || dir === 'both') drawArrow(x1, cy, x2, cy);
+}
+
 function renderRelationDir() {
   const { dir1, color1 } = relationSheetData;
-  // 선 색상
-  ['relationDirLine','relationDirLine1b'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.setAttribute('stroke', color1);
-  });
-  // 화살촉 SVG stroke (svg 요소 자체에 적용)
-  const arrowEndEl   = document.getElementById('relationArrowEnd');
-  const arrowStartEl = document.getElementById('relationArrowStart');
-  if (arrowEndEl) {
-    arrowEndEl.setAttribute('stroke', color1);
-    arrowEndEl.style.display = (dir1 === 'end' || dir1 === 'both') ? '' : 'none';
-  }
-  if (arrowStartEl) {
-    arrowStartEl.setAttribute('stroke', color1);
-    arrowStartEl.style.display = (dir1 === 'start' || dir1 === 'both') ? '' : 'none';
-  }
+  drawRelationLineSvg('relationLineSvg', dir1, color1);
 }
 
 function renderRelationDir2() {
-  const line      = document.getElementById('relationDirLine2');
-  const arrowEnd  = document.getElementById('relationArrowEnd2');
-  const arrowStart= document.getElementById('relationArrowStart2');
-  if (!line) return;
   const { dir2, color2 } = relationSheetData;
-  line.setAttribute('stroke', color2);
-  if (arrowEnd)   { arrowEnd.setAttribute('stroke', color2);   arrowEnd.style.display   = (dir2==='end'||dir2==='both')   ? '' : 'none'; }
-  if (arrowStart) { arrowStart.setAttribute('stroke', color2); arrowStart.style.display = (dir2==='start'||dir2==='both') ? '' : 'none'; }
+  drawRelationLineSvg('relationLineSvg2', dir2, color2);
 }
 
 function renderRelationDir3() {
-  const line      = document.getElementById('relationDirLine3');
-  const arrowEnd  = document.getElementById('relationArrowEnd3');
-  const arrowStart= document.getElementById('relationArrowStart3');
-  if (!line) return;
   const { dir3, color3 } = relationSheetData;
-  line.setAttribute('stroke', color3);
-  if (arrowEnd)   { arrowEnd.setAttribute('stroke', color3);   arrowEnd.style.display   = (dir3==='end'||dir3==='both')   ? '' : 'none'; }
-  if (arrowStart) { arrowStart.setAttribute('stroke', color3); arrowStart.style.display = (dir3==='start'||dir3==='both') ? '' : 'none'; }
+  drawRelationLineSvg('relationLineSvg3', dir3, color3);
 }
 
 let colorTarget = 1; // 1 또는 2
