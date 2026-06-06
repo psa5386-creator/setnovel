@@ -1871,26 +1871,32 @@ body { background:var(--surface); }
         <!-- 선1 모드: 높이를 선2와 통일 -->
         <div id="relation1Row" style="display:flex;flex-direction:column;height:92px;padding-top:17px;">
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
-          <div class="relation-line-wrap" onclick="cycleRelationDir()" style="display:flex;align-items:center;">
-            <svg id="relationArrowStart" viewBox="0 0 18 18" width="18" height="18" style="flex-shrink:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="12,3 6,9 12,15"/></svg>
-            <svg style="flex:1;height:18px;overflow:visible;" preserveAspectRatio="none" viewBox="0 0 10 18"><line id="relationDirLine" x1="0" y1="9" x2="10" y2="9" stroke-width="2"/></svg>
-            <svg id="relationArrowEnd" viewBox="0 0 18 18" width="18" height="18" style="flex-shrink:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="6,3 12,9 6,15"/></svg>
+          <div class="relation-line-wrap" onclick="cycleRelationDir()">
+            <svg class="relation-line-svg" id="relationLineSvg" viewBox="0 0 100 18">
+              <line id="relationDirLine" x1="0" y1="9" x2="100" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd"   points="91,3 97,9 91,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart" points="9,3 3,9 9,15"   fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            </svg>
           </div>
         </div>
         <!-- 선2 모드: 라벨1→선1→선2→라벨2, 두 선 중심이 노드 원 중심에 오도록 -->
         <!-- 선2 모드: label2→선2→스페이서→선3→label3 -->
         <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
-          <div class="relation-line-wrap" onclick="cycleRelationDir2()" style="display:flex;align-items:center;">
-            <svg id="relationArrowStart2" viewBox="0 0 18 18" width="18" height="18" style="flex-shrink:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="12,3 6,9 12,15"/></svg>
-            <svg style="flex:1;height:18px;overflow:visible;" preserveAspectRatio="none" viewBox="0 0 10 18"><line id="relationDirLine2" x1="0" y1="9" x2="10" y2="9" stroke-width="2"/></svg>
-            <svg id="relationArrowEnd2" viewBox="0 0 18 18" width="18" height="18" style="flex-shrink:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="6,3 12,9 6,15"/></svg>
+          <div class="relation-line-wrap" onclick="cycleRelationDir2()">
+            <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 100 18">
+              <line id="relationDirLine2" x1="0" y1="9" x2="100" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd2"   points="91,3 97,9 91,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart2" points="9,3 3,9 9,15"   fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            </svg>
           </div>
           <div style="height:8px;flex-shrink:0;"></div>
-          <div class="relation-line-wrap" onclick="cycleRelationDir3()" style="display:flex;align-items:center;">
-            <svg id="relationArrowStart3" viewBox="0 0 18 18" width="18" height="18" style="flex-shrink:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="12,3 6,9 12,15"/></svg>
-            <svg style="flex:1;height:18px;overflow:visible;" preserveAspectRatio="none" viewBox="0 0 10 18"><line id="relationDirLine3" x1="0" y1="9" x2="10" y2="9" stroke-width="2"/></svg>
-            <svg id="relationArrowEnd3" viewBox="0 0 18 18" width="18" height="18" style="flex-shrink:0;display:none;" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"><polyline points="6,3 12,9 6,15"/></svg>
+          <div class="relation-line-wrap" onclick="cycleRelationDir3()">
+            <svg class="relation-line-svg" id="relationLineSvg3" viewBox="0 0 100 18">
+              <line id="relationDirLine3" x1="0" y1="9" x2="100" y2="9" stroke-width="2.5"/>
+              <polyline id="relationArrowEnd3"   points="91,3 97,9 91,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart3" points="9,3 3,9 9,15"   fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+            </svg>
           </div>
           <input class="relation-label-input" id="relationLabelInput3" placeholder="관계3" autocomplete="off">
         </div>
@@ -3578,7 +3584,7 @@ function renderGraphView() {
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
       lineEl.setAttribute('stroke', strokeColor);
-      lineEl.setAttribute('stroke-width', '2');
+      lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
       svg.appendChild(lineEl);
@@ -4369,10 +4375,16 @@ function renderRelationDir() {
   ['relationDirLine','relationDirLine1b'].forEach(id => {
     const el = document.getElementById(id); if (el) el.setAttribute('stroke', color1);
   });
-  const endEl   = document.getElementById('relationArrowEnd');
-  const startEl = document.getElementById('relationArrowStart');
-  if (endEl)   { endEl.setAttribute('stroke', color1);   endEl.style.display   = (dir1==='end'||dir1==='both') ? '' : 'none'; }
-  if (startEl) { startEl.setAttribute('stroke', color1); startEl.style.display = (dir1==='start'||dir1==='both') ? '' : 'none'; }
+  ['relationArrowEnd','relationArrowEnd1b'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    el.setAttribute('stroke', color1);
+    el.style.display = (dir1 === 'end' || dir1 === 'both') ? '' : 'none';
+  });
+  ['relationArrowStart','relationArrowStart1b'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    el.setAttribute('stroke', color1);
+    el.style.display = (dir1 === 'start' || dir1 === 'both') ? '' : 'none';
+  });
 }
 
 function renderRelationDir2() {
@@ -4548,7 +4560,7 @@ function updateGraphEdges() {
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
       lineEl.setAttribute('stroke', color || '#2C2825');
-      lineEl.setAttribute('stroke-width', '2');
+      lineEl.setAttribute('stroke-width', '2.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
       svg.appendChild(lineEl);
