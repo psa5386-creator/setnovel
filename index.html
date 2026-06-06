@@ -3164,7 +3164,18 @@ function switchTab(tab) {
 
   // 탭별 렌더
   if (tab === 'home')     renderHomeList();
-  if (tab === 'person')   renderPersonList();
+  if (tab === 'person') {
+    renderPersonList();
+    const pCanvas = document.getElementById('personGraphCanvas');
+    if (pCanvas && pCanvas.classList.contains('active')) {
+      requestAnimationFrame(() => {
+        graphCenterInitialized = false;
+        initGraphCenter();
+        renderGraphView();
+        applyGraphTransform();
+      });
+    }
+  }
   if (tab === 'timeline') renderTimelinePage();
   if (tab === 'plot')     renderPlotList();
   if (tab === 'setting') {
@@ -3255,10 +3266,13 @@ function setPersonView(view) {
   if (view === 'graph') {
     listBody.style.display = 'none';
     canvas.classList.add('active');
-    initGraphCenter();
-    renderGraphView();
-    initGraphCanvasGestures();
-    applyGraphTransform();
+    requestAnimationFrame(() => {
+      graphCenterInitialized = false;
+      initGraphCenter();
+      renderGraphView();
+      initGraphCanvasGestures();
+      applyGraphTransform();
+    });
   } else {
     listBody.style.display = '';
     canvas.classList.remove('active');
@@ -4200,7 +4214,7 @@ function execGroupConfirm() {
 // ════════════════════════════════════════
 //  관계 추가 바텀시트
 // ════════════════════════════════════════
-const RELATION_COLORS = ['#6B6B6B','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
+const RELATION_COLORS = ['#9E9E9E','#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#EC407A'];
 let relationSheetData = { fromId: null, toId: null, label1: '', dir1: 'none', color1: '#9E9E9E', label2: '', dir2: 'none', color2: '#9E9E9E', label3: '', dir3: 'none', color3: '#9E9E9E', editEdgeId: null };
 let relationLineMode = 1; // 1 or 2
 
@@ -4570,9 +4584,9 @@ function updateGraphEdges() {
     if (!hasLine2e) {
       drawOneLine(edge.dir1, edge.color1 || '#9E9E9E', 0);
     } else {
-      drawOneLine(edge.dir2, edge.color2 || '#2C2825', -7.5 * dirSign);
+      drawOneLine(edge.dir2, edge.color2 || '#9E9E9E', -7.5 * dirSign);
       if (edge.label3 || edge.dir3 !== 'none') {
-        drawOneLine(edge.dir3, edge.color3 || '#2C2825', 7.5 * dirSign);
+        drawOneLine(edge.dir3, edge.color3 || '#9E9E9E', 7.5 * dirSign);
       }
     }
   });
@@ -6321,6 +6335,16 @@ function closeDetail() {
   currentItemId = null;
   currentStoryId = null;
   currentDetailMode = 'item';
+  // 관계도뷰가 활성 상태면 복귀 후 재렌더
+  const pCanvas = document.getElementById('personGraphCanvas');
+  if (pCanvas && pCanvas.classList.contains('active')) {
+    requestAnimationFrame(() => {
+      graphCenterInitialized = false;
+      initGraphCenter();
+      renderGraphView();
+      applyGraphTransform();
+    });
+  }
 }
 
 // ── 저장 후 카드 업데이트 ──
