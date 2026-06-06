@@ -1873,11 +1873,7 @@ body { background:var(--surface); }
         <div id="relation1Row" style="display:flex;flex-direction:column;height:92px;padding-top:17px;">
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
-            <svg class="relation-line-svg" id="relationLineSvg">
-              <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-            </svg>
+            <svg class="relation-line-svg" id="relationLineSvg"></svg>
           </div>
         </div>
         <!-- 선2 모드: 라벨1→선1→선2→라벨2, 두 선 중심이 노드 원 중심에 오도록 -->
@@ -1885,19 +1881,11 @@ body { background:var(--surface); }
         <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir2()">
-            <svg class="relation-line-svg" id="relationLineSvg2">
-              <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-            </svg>
+            <svg class="relation-line-svg" id="relationLineSvg2"></svg>
           </div>
           <div style="height:8px;flex-shrink:0;"></div>
           <div class="relation-line-wrap" onclick="cycleRelationDir3()">
-            <svg class="relation-line-svg" id="relationLineSvg3">
-              <line id="relationDirLine3" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd3"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart3" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-            </svg>
+            <svg class="relation-line-svg" id="relationLineSvg3"></svg>
           </div>
           <input class="relation-label-input" id="relationLabelInput3" placeholder="관계3" autocomplete="off">
         </div>
@@ -3157,6 +3145,10 @@ function switchTab(tab) {
   const ORDER = ['home', 'person', 'timeline', 'plot', 'setting', 'search'];
   const nextIdx = ORDER.indexOf(tab);
   currentTab = tab;
+
+  // person 탭 아닐 때 캔버스 강제 숨김
+  const canvas = document.getElementById('personGraphCanvas');
+  if (canvas && tab !== 'person') canvas.classList.remove('active');
 
   // 모든 탭 콘텐츠 위치 결정
   const pos = (contentTab) => {
