@@ -1874,9 +1874,9 @@ body { background:var(--surface); }
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
             <svg class="relation-line-svg" id="relationLineSvg" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="3.5"/>
+              <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
         </div>
@@ -1886,17 +1886,17 @@ body { background:var(--surface); }
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir2()">
             <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="3.5"/>
+              <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
           <div style="height:8px;flex-shrink:0;"></div>
           <div class="relation-line-wrap" onclick="cycleRelationDir3()">
             <svg class="relation-line-svg" id="relationLineSvg3" viewBox="0 0 120 18" preserveAspectRatio="none">
-              <line id="relationDirLine3" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
-              <polyline id="relationArrowEnd3"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
-              <polyline id="relationArrowStart3" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <line id="relationDirLine3" x1="4" y1="9" x2="116" y2="9" stroke-width="3.5"/>
+              <polyline id="relationArrowEnd3"   points="110,3 116,9 110,15" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
+              <polyline id="relationArrowStart3" points="10,3 4,9 10,15"     fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
             </svg>
           </div>
           <input class="relation-label-input" id="relationLabelInput3" placeholder="관계3" autocomplete="off">
@@ -3555,7 +3555,7 @@ function renderGraphView() {
     const fc = imgCenter(fromPos), tc = imgCenter(toPos);
 
     const NS = 'http://www.w3.org/2000/svg';
-    const ah = 4.5; // 6 * 0.75
+    const ah = 5.5; // 3.5 기준
 
     // 법선 방향 계산 (중앙선 기준 수직)
     const dx = tc.x - fc.x, dy = tc.y - fc.y;
@@ -3585,7 +3585,7 @@ function renderGraphView() {
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
       lineEl.setAttribute('stroke', strokeColor);
-      lineEl.setAttribute('stroke-width', '2.5');
+      lineEl.setAttribute('stroke-width', '3.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
       svg.appendChild(lineEl);
@@ -3606,7 +3606,7 @@ function renderGraphView() {
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
         pl.setAttribute('fill','none'); pl.setAttribute('stroke', strokeColor);
-        pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        pl.setAttribute('stroke-width','3.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
       }
@@ -4063,7 +4063,7 @@ function renderGroupPreview() {
     text.setAttribute('font-size', fontSize);
     text.setAttribute('font-weight', '600');
     text.setAttribute('font-family', 'Pretendard, sans-serif');
-    text.setAttribute('fill', darkenColor(color));
+    text.setAttribute('fill', '#FFFFFF');
     text.classList.add('grp-lbl-text');
     text.style.pointerEvents = 'none';
     text.textContent = displayVal;
@@ -4093,10 +4093,10 @@ function renderGroupPreview() {
     inp.autocomplete = 'off';
     const cx = svgRect.left - wrapRect.left + lblX * scaleX;
     const cy = svgRect.top  - wrapRect.top  + lblY * scaleY;
-    inp.style.cssText = `position:absolute;border:none;outline:none;font-family:inherit;font-size:12px;font-weight:600;text-align:center;border-radius:4px;padding:3px 8px;box-sizing:border-box;background:${color};color:${darkenColor(color)};width:80px;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);z-index:10;`;
+    inp.style.cssText = `position:absolute;border:none;outline:none;font-family:inherit;font-size:12px;font-weight:600;text-align:center;border-radius:4px;padding:3px 8px;box-sizing:border-box;background:${color};color:#FFFFFF;width:80px;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);z-index:10;`;
     // placeholder 색상 진하게
     const style = document.createElement('style');
-    style.textContent = `#groupLabelInput::placeholder { color:${darkenColor(color)}; opacity:0.6; }`;
+    style.textContent = `#groupLabelInput::placeholder { color:#FFFFFF; opacity:0.6; }`;
     document.head.appendChild(style);
     wrap.appendChild(inp);
     inp.focus();
@@ -4541,7 +4541,7 @@ function updateGraphEdges() {
   const ic = (pos) => ({ x: pos.x, y: pos.y });
   // 선+화살촉 모두 제거 후 재렌더
   svg.querySelectorAll('line, polyline').forEach(el => el.remove());
-  const ah = 4.5; // 6 * 0.75
+  const ah = 5.5; // 3.5 기준
   edges.forEach(edge => {
     const f = nodes[edge.from], t = nodes[edge.to];
     if (!f || !t) return;
@@ -4561,7 +4561,7 @@ function updateGraphEdges() {
       lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
       lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
       lineEl.setAttribute('stroke', color || '#2C2825');
-      lineEl.setAttribute('stroke-width', '2.5');
+      lineEl.setAttribute('stroke-width', '3.5');
       lineEl.setAttribute('stroke-linecap', 'round');
       lineEl.dataset.edgeId = edge.id;
       svg.appendChild(lineEl);
@@ -4571,7 +4571,7 @@ function updateGraphEdges() {
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
         pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || '#2C2825');
-        pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        pl.setAttribute('stroke-width','3.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
       }
