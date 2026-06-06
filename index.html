@@ -4365,25 +4365,24 @@ function drawRelationLineSvg(svgId, dir, color) {
   const svg = document.getElementById(svgId);
   if (!svg) return;
   svg.innerHTML = '';
+  svg.style.overflow = 'visible';
   const NS = 'http://www.w3.org/2000/svg';
   const W = svg.clientWidth || svg.getBoundingClientRect().width || 200;
   const H = 18;
   const cy = H / 2;
-  const ah = 5.5; // 관계도와 동일
-  // 선 끝점
+  const ah = 5.5;
   const x1 = 0, x2 = W;
-  // 화살촉이 있을 때 선 끝을 화살촉 꼭짓점(끝점)까지만
-  const lx1 = (dir === 'start' || dir === 'both') ? ah : x1;
-  const lx2 = (dir === 'end'   || dir === 'both') ? x2 - ah : x2;
-  // 선
+
+  // 선 — 끝점을 화살촉 꼭짓점에 정확히 맞춤
   const line = document.createElementNS(NS, 'line');
-  line.setAttribute('x1', lx1); line.setAttribute('y1', cy);
-  line.setAttribute('x2', lx2); line.setAttribute('y2', cy);
+  line.setAttribute('x1', x1); line.setAttribute('y1', cy);
+  line.setAttribute('x2', x2); line.setAttribute('y2', cy);
   line.setAttribute('stroke', color);
   line.setAttribute('stroke-width', '2.5');
   line.setAttribute('stroke-linecap', 'round');
   svg.appendChild(line);
-  // 화살촉 (관계도와 동일한 공식)
+
+  // 화살촉 — 관계도와 동일 공식, 꼭짓점(tx,ty)이 선 끝과 일치
   function drawArrow(tx, ty, fx, fy) {
     const d = Math.sqrt((tx-fx)**2+(ty-fy)**2)||1;
     const ux=(tx-fx)/d, uy=(ty-fy)/d, px=-uy, py=ux;
