@@ -2310,7 +2310,7 @@ body { background:var(--surface); }
     <div class="tl-person-search-list" id="groupPersonSearchList" style="flex:1; max-height:none; overflow-y:auto;"></div>
     <button class="tl-filter-clear-btn" id="groupPersonConfirmBtn" onclick="confirmGroupPersonSelection()" style="flex-shrink:0; color:var(--accent-green);">확인</button>
   </div>
-  <div class="era-sheet" onclick="event.stopPropagation()" style="position:relative;">
+  <div class="era-sheet" onclick="event.stopPropagation(); _closeGroupPersonPopupIfOpen(event);" style="position:relative;">
     <div class="era-sheet-handle"></div>
     <div class="era-sheet-nav">
       <div class="era-sheet-back" onclick="closeGroupSheet()">
@@ -4022,16 +4022,20 @@ function openGroupPersonPopup(mode, anchorRect) {
   }
 
   popup.classList.add('open');
-  setTimeout(() => {
-    document.addEventListener('click', _closeGroupPersonPopup, { once: true });
-  }, 0);
+  // 외부 클릭 시 닫기는 onGroupSheetOverlayClick에서 처리
   requestAnimationFrame(() => input.focus());
 }
 
 function _closeGroupPersonPopup() {
-  // 외부 탭 → 선택 취소
   _groupPersonTempIds = [];
   document.getElementById('groupPersonPopup').classList.remove('open');
+}
+
+function _closeGroupPersonPopupIfOpen(e) {
+  const popup = document.getElementById('groupPersonPopup');
+  if (!popup.classList.contains('open')) return;
+  if (popup.contains(e.target)) return; // 팝업 내부 클릭 무시
+  _closeGroupPersonPopup();
 }
 
 function confirmGroupPersonSelection() {
@@ -4116,7 +4120,14 @@ function closeGroupSheet() {
 }
 
 function onGroupSheetOverlayClick(e) {
-  if (e.target === document.getElementById('groupSheetOverlay')) closeGroupSheet();
+  if (e.target === document.getElementById('groupSheetOverlay')) {
+    const popup = document.getElementById('groupPersonPopup');
+    if (popup.classList.contains('open')) {
+      _closeGroupPersonPopup();
+    } else {
+      closeGroupSheet();
+    }
+  }
 }
 
 function renderGroupPreview() {
