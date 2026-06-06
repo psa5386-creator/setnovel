@@ -1076,7 +1076,7 @@ body { background:var(--surface); }
 ════════════════════════════════════════ */
 #personGraphCanvas {
   position:absolute; inset:0;
-  display:none; overflow:visible;
+  display:none; overflow:visible; z-index:1;
   background:var(--bg); touch-action:none;
   background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
   background-size: 150px 150px;
@@ -1873,7 +1873,7 @@ body { background:var(--surface); }
         <div id="relation1Row" style="display:flex;flex-direction:column;height:92px;padding-top:17px;">
           <input class="relation-label-input" id="relationLabelInput" placeholder="관계1" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir()">
-            <svg class="relation-line-svg" id="relationLineSvg" viewBox="0 0 120 18" preserveAspectRatio="none">
+            <svg class="relation-line-svg" id="relationLineSvg">
               <line id="relationDirLine" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
               <polyline id="relationArrowEnd"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
               <polyline id="relationArrowStart" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
@@ -1885,7 +1885,7 @@ body { background:var(--surface); }
         <div id="relation2Row" style="display:none;flex-direction:column;height:92px;padding-top:4px;">
           <input class="relation-label-input" id="relationLabelInput2" placeholder="관계2" autocomplete="off">
           <div class="relation-line-wrap" onclick="cycleRelationDir2()">
-            <svg class="relation-line-svg" id="relationLineSvg2" viewBox="0 0 120 18" preserveAspectRatio="none">
+            <svg class="relation-line-svg" id="relationLineSvg2">
               <line id="relationDirLine2" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
               <polyline id="relationArrowEnd2"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
               <polyline id="relationArrowStart2" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
@@ -1893,7 +1893,7 @@ body { background:var(--surface); }
           </div>
           <div style="height:8px;flex-shrink:0;"></div>
           <div class="relation-line-wrap" onclick="cycleRelationDir3()">
-            <svg class="relation-line-svg" id="relationLineSvg3" viewBox="0 0 120 18" preserveAspectRatio="none">
+            <svg class="relation-line-svg" id="relationLineSvg3">
               <line id="relationDirLine3" x1="4" y1="9" x2="116" y2="9" stroke-width="2.5"/>
               <polyline id="relationArrowEnd3"   points="110,3 116,9 110,15" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
               <polyline id="relationArrowStart3" points="10,3 4,9 10,15"     fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none"/>
@@ -4438,21 +4438,24 @@ function setColorTarget(n) {
 function renderRelationColors() {
   const row = document.getElementById('relationColorRow');
   row.innerHTML = '';
-  const activeColor = colorTarget === 1 ? relationSheetData.color1 : (relationLineMode === 2 && colorTarget === 2 ? relationSheetData.color2 : relationSheetData.color3);
+  let activeColor;
+  if (relationLineMode === 2) {
+    activeColor = colorTarget === 1 ? relationSheetData.color2 : relationSheetData.color3;
+  } else {
+    activeColor = relationSheetData.color1;
+  }
+  if (!activeColor || !RELATION_COLORS.includes(activeColor)) activeColor = RELATION_COLORS[0];
   RELATION_COLORS.forEach(c => {
     const chip = document.createElement('div');
     chip.className = 'relation-color-chip' + (c === activeColor ? ' selected' : '');
     chip.style.background = c;
     chip.onclick = () => {
-      if (colorTarget === 1) {
+      if (relationLineMode === 2) {
+        if (colorTarget === 1) { relationSheetData.color2 = c; renderRelationDir2(); }
+        else                   { relationSheetData.color3 = c; renderRelationDir3(); }
+      } else {
         relationSheetData.color1 = c;
         renderRelationDir();
-      } else if (colorTarget === 2) {
-        relationSheetData.color2 = c;
-        renderRelationDir2();
-      } else {
-        relationSheetData.color3 = c;
-        renderRelationDir3();
       }
       renderRelationColors();
     };
