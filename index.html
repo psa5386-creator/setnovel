@@ -3710,6 +3710,8 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
   const canvas = document.getElementById('personGraphCanvas');
   const startX = e.clientX - pos.x;
   const startY = e.clientY - pos.y;
+  const origX = pos.x;
+  const origY = pos.y;
   let moved = false;
 
   function onMove(ev) {
@@ -3723,21 +3725,61 @@ function onGraphNodePointerDown(e, personId, nodeEl, pos) {
     if (item) item.graphPos = { x: newX, y: newY };
     updateGraphEdges();
   }
-  function onUp() {
+  function onUp(ev) {
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
     if (moved && PROJECT_ID) {
+      // 그룹 라벨 위에 드롭했는지 확인
+      const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
+      const labelEl = dropEl?.closest?.('.graph-group-label');
+      if (labelEl) {
+        const groupId = labelEl.dataset.groupId;
+        const groups = getGraphGroups();
+        const group = groups.find(g => g.id === groupId);
+        if (group && !group.nodeIds.includes(personId)) {
+          // 원래 위치로 복귀
+          pos.x = origX; pos.y = origY;
+          nodeEl.style.left = origX + 'px';
+          nodeEl.style.top  = origY + 'px';
+          const item = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
+          if (item) item.graphPos = { x: origX, y: origY };
+          updateGraphEdges();
+          // 그룹 포함 확인 바텀시트
+          openGroupConfirmSheet('include', personId, groupId, `"${group.name}"에 포함`);
+          return;
+        }
+      }
+
       // 그리드 스냅
       const snappedX = snapToGrid(pos.x);
       const snappedY = snapToGrid(pos.y);
-      pos.x = snappedX; pos.y = snappedY;
-      nodeEl.style.left = snappedX + 'px';
-      nodeEl.style.top  = snappedY + 'px';
-      const movedItem = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
-      if (movedItem) {
-        movedItem.graphPos = { x: snappedX, y: snappedY };
-        const order = (STORY_DB[PROJECT_ID] || []).findIndex(i => i.id === personId);
-        ref.item(PROJECT_ID, personId).set({ ...movedItem, _order: order });
+
+      // 겹침 확인: 같은 위치에 다른 노드가 있으면 원래 위치로
+      const allItems = STORY_DB[PROJECT_ID] || [];
+      const occupied = allItems.some(i =>
+        i.id !== personId &&
+        i.graphPos &&
+        snapToGrid(i.graphPos.x) === snappedX &&
+        snapToGrid(i.graphPos.y) === snappedY
+      );
+
+      if (occupied) {
+        // 원래 위치로 복귀
+        pos.x = origX; pos.y = origY;
+        nodeEl.style.left = origX + 'px';
+        nodeEl.style.top  = origY + 'px';
+        const item = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
+        if (item) item.graphPos = { x: origX, y: origY };
+      } else {
+        pos.x = snappedX; pos.y = snappedY;
+        nodeEl.style.left = snappedX + 'px';
+        nodeEl.style.top  = snappedY + 'px';
+        const movedItem = (STORY_DB[PROJECT_ID] || []).find(i => i.id === personId);
+        if (movedItem) {
+          movedItem.graphPos = { x: snappedX, y: snappedY };
+          const order = (STORY_DB[PROJECT_ID] || []).findIndex(i => i.id === personId);
+          ref.item(PROJECT_ID, personId).set({ ...movedItem, _order: order });
+        }
       }
       updateGraphEdges();
     }
@@ -4414,7 +4456,7 @@ let colorTarget = 1; // 1 또는 2
 window.colorTarget = colorTarget;
 function toggleColorTarget() {
   if (relationLineMode === 2) {
-    setColorTarget(colorTarget === 1 ? 2 : colorTarget === 2 ? 3 : 1);
+    setColorTarget(colorTarget === 1 ? 2 : 1);
   } else {
     setColorTarget(1); // 선1 모드는 항상 1
   }
@@ -6584,6 +6626,11 @@ function trashItem(id) {
   STORY_DB[PROJECT_ID] = ITEMS;
   renderList(ITEMS);
   if (isPersonTab || item.type === '인물') renderPersonList();
+  // 지역 삭제 시 지도뷰 핀 즉시 갱신
+  if (item.type === '지역') {
+    const mapBody = document.getElementById('settingMapBody');
+    if (mapBody && mapBody.classList.contains('active')) renderMapView();
+  }
   // Firebase에서 삭제
   deleteItem(id);
 }
@@ -8875,6 +8922,8 @@ function confirmSettingCardDelete() {
     deleteItem(id);
   }
   renderSettingList();
+  const mapBody = document.getElementById('settingMapBody');
+  if (mapBody && mapBody.classList.contains('active')) renderMapView();
 }
 
 // ── 드래그드롭 ──
