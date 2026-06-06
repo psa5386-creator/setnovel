@@ -2299,17 +2299,17 @@ body { background:var(--surface); }
 </div>
 <!-- 그룹 추가/수정 바텀시트 -->
 <div class="era-sheet-overlay" id="groupSheetOverlay" onclick="onGroupSheetOverlayClick(event)">
-  <div class="era-sheet" onclick="event.stopPropagation()" style="position:relative;">
-    <!-- 그룹 인물 추가/제거 팝업 (era-sheet 내부 absolute) -->
-    <div class="tl-person-search-popup" id="groupPersonPopup" onclick="event.stopPropagation()" style="position:absolute; width:160px; height:220px; display:none; flex-direction:column; box-sizing:border-box; z-index:10;">
-      <div class="tl-person-search-input-wrap" style="flex-shrink:0;">
-        <svg viewBox="0 0 256 256"><path d="M253.68,232.67l-48.59-48.59c11.39-15.61,18.12-34.84,18.12-55.64,0-52.17-42.3-94.47-94.47-94.47s-94.47,42.3-94.47,94.47,42.3,94.47,94.47,94.47c20.8,0,40.03-6.73,55.64-18.12l48.59,48.59c3.04,3.04,8,3.04,11.04,0l9.67-9.67c3.04-3.04,3.04-8,0-11.04ZM177.92,196.13c-8.09,5.75-20.8.41-31.6-7.04l-17.57-12.77-17.57,12.77c-10.8,7.45-23.51,12.79-31.6,7.04-7.97-5.92-6.82-19.65-3.07-32.23l6.71-20.66-17.57-12.77c-10.42-7.97-19.43-18.4-16.46-27.88,3.17-9.41,16.59-12.56,29.7-12.88h21.72l6.71-20.66c4.36-12.38,11.5-24.16,21.43-24.27,9.93.1,17.07,11.89,21.43,24.27l6.71,20.66h21.72c13.12.32,26.54,3.47,29.7,12.88,2.97,9.48-6.04,19.91-16.46,27.88l-17.57,12.77,6.71,20.66c3.75,12.58,4.9,26.31-3.07,32.23Z"/></svg>
-        <input class="tl-person-search-input" id="groupPersonSearchInput" placeholder="인물 검색..."
-          oninput="renderGroupPersonList(this.value)" autocomplete="off">
-      </div>
-      <div class="tl-person-search-list" id="groupPersonSearchList" style="flex:1; max-height:none; overflow-y:auto;"></div>
-      <button class="tl-filter-clear-btn" id="groupPersonConfirmBtn" onclick="confirmGroupPersonSelection()" style="flex-shrink:0; color:var(--accent-green);">확인</button>
+  <!-- 그룹 인물 추가/제거 팝업 (overlay 직속, era-sheet overflow:hidden 영향 없음) -->
+  <div class="tl-person-search-popup" id="groupPersonPopup" onclick="event.stopPropagation()" style="position:absolute; width:160px; height:220px; display:none; flex-direction:column; box-sizing:border-box; z-index:10;">
+    <div class="tl-person-search-input-wrap" style="flex-shrink:0;">
+      <svg viewBox="0 0 256 256"><path d="M253.68,232.67l-48.59-48.59c11.39-15.61,18.12-34.84,18.12-55.64,0-52.17-42.3-94.47-94.47-94.47s-94.47,42.3-94.47,94.47,42.3,94.47,94.47,94.47c20.8,0,40.03-6.73,55.64-18.12l48.59,48.59c3.04,3.04,8,3.04,11.04,0l9.67-9.67c3.04-3.04,3.04-8,0-11.04ZM177.92,196.13c-8.09,5.75-20.8.41-31.6-7.04l-17.57-12.77-17.57,12.77c-10.8,7.45-23.51,12.79-31.6,7.04-7.97-5.92-6.82-19.65-3.07-32.23l6.71-20.66-17.57-12.77c-10.42-7.97-19.43-18.4-16.46-27.88,3.17-9.41,16.59-12.56,29.7-12.88h21.72l6.71-20.66c4.36-12.38,11.5-24.16,21.43-24.27,9.93.1,17.07,11.89,21.43,24.27l6.71,20.66h21.72c13.12.32,26.54,3.47,29.7,12.88,2.97,9.48-6.04,19.91-16.46,27.88l-17.57,12.77,6.71,20.66c3.75,12.58,4.9,26.31-3.07,32.23Z"/></svg>
+      <input class="tl-person-search-input" id="groupPersonSearchInput" placeholder="인물 검색..."
+        oninput="renderGroupPersonList(this.value)" autocomplete="off">
     </div>
+    <div class="tl-person-search-list" id="groupPersonSearchList" style="flex:1; max-height:none; overflow-y:auto;"></div>
+    <button class="tl-filter-clear-btn" id="groupPersonConfirmBtn" onclick="confirmGroupPersonSelection()" style="flex-shrink:0; color:var(--accent-green);">확인</button>
+  </div>
+  <div class="era-sheet" onclick="event.stopPropagation()" style="position:relative;">
     <div class="era-sheet-handle"></div>
     <div class="era-sheet-nav">
       <div class="era-sheet-back" onclick="closeGroupSheet()">
@@ -4002,16 +4002,14 @@ function openGroupPersonPopup(mode, anchorRect) {
   input.value = '';
   renderGroupPersonList('');
 
-  // era-sheet 기준 absolute 위치
-  // 가로: 추가 → right:15px, 제거 → left:15px
-  // 세로: group-preview-wrap 중앙
-  const sheet = document.querySelector('#groupSheetOverlay .era-sheet');
-  const wrap  = document.querySelector('.group-preview-wrap');
-  if (sheet && wrap) {
-    const sheetRect = sheet.getBoundingClientRect();
-    const wrapRect  = wrap.getBoundingClientRect();
-    const wrapCenterY = wrapRect.top - sheetRect.top + wrapRect.height / 2;
-    popup.style.top    = (wrapCenterY - 110) + 'px'; // 팝업 높이 220 / 2
+  // era-sheet-overlay 기준 absolute 위치
+  const overlay = document.getElementById('groupSheetOverlay');
+  const wrap    = document.querySelector('.group-preview-wrap');
+  if (overlay && wrap) {
+    const overlayRect = overlay.getBoundingClientRect();
+    const wrapRect    = wrap.getBoundingClientRect();
+    const wrapCenterY = wrapRect.top - overlayRect.top + wrapRect.height / 2;
+    popup.style.top    = (wrapCenterY - 110) + 'px';
     popup.style.bottom = 'auto';
     if (mode === 'add') {
       popup.style.right = '15px';
