@@ -4537,16 +4537,15 @@ function positionEdgeLabel(lbl, fc, tc, outerSign = undefined) {
   let fnx = -Math.sin(angle);
   let fny =  Math.cos(angle);
 
-  if (Math.abs(dx) < 1) {
-    // 수직선: 항상 왼쪽
+  if (Math.abs(dx) < 1 && outerSign === undefined) {
+    // 수직선 + 선1: 항상 왼쪽
     fnx = -1;
     fny = 0;
   } else if (outerSign === undefined) {
-    // 선1: 항상 선 위 (화면 y 감소 방향)
-    // fny > 0이면 법선이 아래를 가리키므로 뒤집기
+    // 선1 (비수직): 항상 선 위 (fny > 0이면 뒤집기)
     if (fny > 0) { fnx = -fnx; fny = -fny; }
   } else {
-    // 선2/3: outerSign 방향으로 → 항상 바깥
+    // 선2/3 (수직/비수직 모두): outerSign 방향으로 → 항상 바깥
     fnx = fnx * outerSign;
     fny = fny * outerSign;
   }
