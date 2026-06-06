@@ -3995,7 +3995,7 @@ function darkenColor(hex) {
 let _groupPersonMode = 'add'; // 'add' | 'remove'
 let _groupPersonTempIds = []; // 다중 선택 임시 배열
 
-function openGroupPersonPopup(mode, anchorEl) {
+function openGroupPersonPopup(mode, anchorRect) {
   _groupPersonMode = mode;
   _groupPersonTempIds = [];
   const popup = document.getElementById('groupPersonPopup');
@@ -4004,8 +4004,7 @@ function openGroupPersonPopup(mode, anchorEl) {
   renderGroupPersonList('');
   popup.classList.add('open');
 
-  // anchorEl의 실제 화면 좌표 계산
-  const anchorRect = anchorEl.getBoundingClientRect();
+  // anchorRect는 SVG 좌표 → 화면 좌표 변환된 rect 객체
   const popupW = 160;
   const popupH = 220;
   const margin = 8;
@@ -4219,9 +4218,26 @@ function renderGroupPreview() {
     fo.style.overflow = 'hidden';
     const foDiv = document.createElement('div');
     foDiv.style.cssText = `width:100%; height:100%; border-radius:50%; cursor:pointer;`;
+    const capturedP = { x: p.x, y: p.y };
+    const capturedI = i;
     foDiv.addEventListener('click', (e) => {
       e.stopPropagation();
-      openGroupPersonPopup(i === 0 ? 'add' : 'remove', foDiv);
+      const svgEl = document.getElementById('groupPreviewSvg');
+      const svgRect = svgEl.getBoundingClientRect();
+      const scaleX = svgRect.width  / 300;
+      const scaleY = svgRect.height / 140;
+      const screenCx = svgRect.left + capturedP.x * scaleX;
+      const screenCy = svgRect.top  + capturedP.y * scaleY;
+      const screenR  = R * Math.min(scaleX, scaleY);
+      const fakeRect = {
+        left:   screenCx - screenR,
+        right:  screenCx + screenR,
+        top:    screenCy - screenR,
+        bottom: screenCy + screenR,
+        width:  screenR * 2,
+        height: screenR * 2,
+      };
+      openGroupPersonPopup(capturedI === 0 ? 'add' : 'remove', fakeRect);
     });
     fo.appendChild(foDiv);
     svg.appendChild(fo);
