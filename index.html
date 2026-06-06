@@ -4002,16 +4002,15 @@ function openGroupPersonPopup(mode, anchorEl) {
   const input = document.getElementById('groupPersonSearchInput');
   input.value = '';
   renderGroupPersonList('');
-
   popup.classList.add('open');
 
+  // anchorEl의 실제 화면 좌표 계산
   const anchorRect = anchorEl.getBoundingClientRect();
   const popupW = 160;
   const popupH = 220;
   const margin = 8;
 
-  // 인물추가(mode=add, 왼쪽 노드) → 팝업을 앵커 오른쪽
-  // 인물제거(mode=remove, 오른쪽 노드) → 팝업을 앵커 왼쪽
+  // 추가(왼쪽 노드) → 팝업 오른쪽, 제거(오른쪽 노드) → 팝업 왼쪽
   let left;
   if (mode === 'add') {
     left = anchorRect.right + 4;
@@ -4021,7 +4020,6 @@ function openGroupPersonPopup(mode, anchorEl) {
     if (left < margin) left = anchorRect.right + 4;
   }
 
-  // 세로: 앵커 중앙 기준, 화면 범위 클램프
   const safeBottom = window.innerHeight - 20;
   let top = anchorRect.top + anchorRect.height / 2 - popupH / 2;
   top = Math.max(margin, Math.min(top, safeBottom - popupH));
@@ -4032,7 +4030,6 @@ function openGroupPersonPopup(mode, anchorEl) {
   setTimeout(() => {
     document.addEventListener('click', _closeGroupPersonPopup, { once: true });
   }, 0);
-
   requestAnimationFrame(() => input.focus());
 }
 
@@ -4121,7 +4118,6 @@ function openGroupSheet(groupId) {
 
 function closeGroupSheet() {
   document.getElementById('groupSheetOverlay').classList.remove('open');
-  document.querySelectorAll('[data-hit-idx]').forEach(el => el.remove());
 }
 
 function onGroupSheetOverlayClick(e) {
@@ -4132,8 +4128,6 @@ function renderGroupPreview() {
   const svg = document.getElementById('groupPreviewSvg');
   if (!svg) return;
   svg.innerHTML = '';
-  // 기존 hitDiv 정리 (body fixed)
-  document.querySelectorAll('[data-hit-idx]').forEach(el => el.remove());
   const color = groupSheetData.color || '#72B878';
   const R = 32, PAD = 54;
   const NS = 'http://www.w3.org/2000/svg';
@@ -4214,31 +4208,23 @@ function renderGroupPreview() {
     nameText.textContent = i === 0 ? '인물 추가' : '인물 제거';
     svg.appendChild(nameText);
 
-    // 히트 영역 — body fixed (era-sheet overflow:hidden 우회)
-    // 시트 오픈 애니메이션(0.3s) 후 위치 계산
-    const hitDiv = document.createElement('div');
-    hitDiv.style.cssText = 'position:fixed; border-radius:50%; cursor:pointer; z-index:450;';
-    hitDiv.dataset.hitIdx = String(i);
-    hitDiv.addEventListener('click', (e) => {
+    // 히트 영역 — SVG foreignObject로 클릭 처리
+    const fo = document.createElementNS(NS, 'foreignObject');
+    fo.setAttribute('x', p.x - R);
+    fo.setAttribute('y', p.y - R);
+    fo.setAttribute('width', R * 2);
+    fo.setAttribute('height', R * 2);
+    fo.style.cursor = 'pointer';
+    fo.style.borderRadius = '50%';
+    fo.style.overflow = 'hidden';
+    const foDiv = document.createElement('div');
+    foDiv.style.cssText = `width:100%; height:100%; border-radius:50%; cursor:pointer;`;
+    foDiv.addEventListener('click', (e) => {
       e.stopPropagation();
-      openGroupPersonPopup(i === 0 ? 'add' : 'remove', hitDiv);
+      openGroupPersonPopup(i === 0 ? 'add' : 'remove', foDiv);
     });
-    document.body.appendChild(hitDiv);
-    const capturedP = { x: p.x, y: p.y };
-    setTimeout(() => {
-      const svgEl = document.getElementById('groupPreviewSvg');
-      if (!svgEl) return;
-      const svgRect = svgEl.getBoundingClientRect();
-      const scaleX = svgRect.width  / 300;
-      const scaleY = svgRect.height / 140;
-      const cx = svgRect.left + capturedP.x * scaleX;
-      const cy = svgRect.top  + capturedP.y * scaleY;
-      const r  = R * Math.min(scaleX, scaleY);
-      hitDiv.style.left   = (cx - r) + 'px';
-      hitDiv.style.top    = (cy - r) + 'px';
-      hitDiv.style.width  = (r * 2) + 'px';
-      hitDiv.style.height = (r * 2) + 'px';
-    }, 320);
+    fo.appendChild(foDiv);
+    svg.appendChild(fo);
   });
 
   // 라벨 — rect + text, 탭하면 input 편집
