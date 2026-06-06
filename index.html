@@ -3606,7 +3606,7 @@ function renderGraphView() {
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
         pl.setAttribute('fill','none'); pl.setAttribute('stroke', strokeColor);
-        pl.setAttribute('stroke-width','3.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
       }
@@ -4571,7 +4571,7 @@ function updateGraphEdges() {
         const pl = document.createElementNS(NS, 'polyline');
         pl.setAttribute('points', `${tx-ux*ah+px*ah},${ty-uy*ah+py*ah} ${tx},${ty} ${tx-ux*ah-px*ah},${ty-uy*ah-py*ah}`);
         pl.setAttribute('fill','none'); pl.setAttribute('stroke', color || '#2C2825');
-        pl.setAttribute('stroke-width','3.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
+        pl.setAttribute('stroke-width','2.5'); pl.setAttribute('stroke-linecap','round'); pl.setAttribute('stroke-linejoin','round');
         pl.dataset.edgeId = edge.id;
         svg.appendChild(pl);
       }
