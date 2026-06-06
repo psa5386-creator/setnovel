@@ -1244,7 +1244,7 @@ body { background:var(--surface); }
 
 /* 색상 선택 */
 .relation-color-row {
-  display:flex; gap:8px; padding:16px 15px 20px;
+  display:flex; gap:6px; padding:20px 15px 25px;
   justify-content:center;
   flex-shrink:0;
 }
@@ -1898,11 +1898,11 @@ body { background:var(--surface); }
     </div>
 
     <!-- 색상칩 행 -->
-    <div style="display:flex;align-items:center;padding:6px 15px 20px;gap:6px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;padding:0 15px;gap:6px;flex-shrink:0;">
       <!-- 선색상1 (선1모드: 라벨만, 선2모드: 클릭 버튼) -->
       <div id="colorTarget1Btn"
         style="font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--accent-green);background:var(--accent-green);color:#fff;flex-shrink:0;white-space:nowrap;min-width:52px;text-align:center;">선색상1</div>
-      <div class="relation-color-row" id="relationColorRow" style="margin:0;padding:0;justify-content:center;flex:1;"></div>
+      <div class="relation-color-row" id="relationColorRow" style="margin:0;justify-content:center;flex:1;"></div>
       <!-- 선색상2 (선2모드만 표시, 선1모드엔 동일 너비 투명 placeholder) -->
       <div id="colorTarget2Btn" onclick="setColorTarget(2)"
         style="font-size:12px;font-weight:700;padding:3px 7px;border-radius:20px;border:1.5px solid var(--border);background:none;color:var(--text-secondary);cursor:pointer;flex-shrink:0;white-space:nowrap;min-width:52px;text-align:center;visibility:hidden;">선색상2</div>
