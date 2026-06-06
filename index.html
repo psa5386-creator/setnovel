@@ -4500,10 +4500,9 @@ function positionEdgeLabel(lbl, fc, tc, lineOffset = 0, origFc = null, origTc = 
       // 선1: 항상 왼쪽
       fnx = -1;
     } else {
-      // 선2/3: 실제 선의 x 이동 방향 = nx * lineOffset 부호
-      // nx = -dy/dl, 수직선에서 dx=0이므로 nx = -(dy/|dy|)
-      const actualX = fnx * lineOffset; // 양수=오른쪽, 음수=왼쪽
-      fnx = actualX >= 0 ? 1 : -1;
+      // 선2/3: fc(offset 적용된 선 중심)의 x가 원래 중심보다 오른쪽이면 오른쪽, 왼쪽이면 왼쪽
+      const origMx = origFc ? (origFc.x + origTc.x) / 2 : mx;
+      fnx = mx >= origMx ? 1 : -1;
     }
     fny = 0;
   }
