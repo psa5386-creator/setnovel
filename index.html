@@ -4500,17 +4500,19 @@ function positionEdgeLabel(lbl, fc, tc, lineOffset = 0, origFc = null, origTc = 
       // 선1: 항상 왼쪽
       fnx = -1;
     } else {
-      // 선2/3: fc(offset 적용된 선 중심)의 x가 원래 중심보다 오른쪽이면 오른쪽, 왼쪽이면 왼쪽
-      const origMx = origFc ? (origFc.x + origTc.x) / 2 : mx;
-      fnx = mx >= origMx ? 1 : -1;
+      // 선2/3: 선의 실제 x = origFc.x + nx*lineOffset
+      // 그 x가 원점보다 왼쪽이면 라벨도 더 왼쪽, 오른쪽이면 더 오른쪽
+      const lineX = (origFc ? origFc.x : rfc.x) + fnx * lineOffset;
+      const centerX = origFc ? (origFc.x + origTc.x) / 2 : mx;
+      fnx = lineX <= centerX ? -1 : 1;
     }
     fny = 0;
   }
 
-  // 선2/3(lineOffset≠0): 법선 y성분이 아래면 offset 부호 반전 (선 위치와 동일한 dirSign 보정)
-  // 선1(lineOffset=0): 보정 없이 항상 +법선(위)
-  const dirSignLbl = (lineOffset !== 0 && fny > 0) ? -1 : 1;
-  const sign = (lineOffset > 0 ? -1 : 1) * dirSignLbl;
+  // 선2/3: 법선 y성분이 아래면 offset 부호 반전
+  const isVertical = Math.abs(dx) < 1;
+  const dirSignLbl = (!isVertical && lineOffset !== 0 && fny > 0) ? -1 : 1;
+  const sign = isVertical ? 1 : (lineOffset > 0 ? -1 : 1) * dirSignLbl;
   const lx = mx + fnx * OFFSET * sign;
   const ly = my + fny * OFFSET * sign;
 
