@@ -2316,6 +2316,7 @@ body { background:var(--surface); }
         <svg viewBox="0 0 256 256"><path d="M140.22,236L25.23,138.25c-5.93-5.04-5.93-14.21,0-19.25L140.22,21.26" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/></svg>
       </div>
       <span class="era-sheet-title" id="groupSheetTitle">그룹 추가</span>
+      <button class="era-sheet-save" id="groupSheetDeleteBtn" onclick="deleteGroupSheet()" style="display:none; background:none; color:var(--red); font-size:14px; padding:6px 8px;">삭제</button>
       <button class="era-sheet-save" onclick="saveGroupSheet()">저장</button>
     </div>
     <!-- 미리보기: SVG 바운더리 + 노드 + 라벨 입력창 -->
@@ -3682,11 +3683,12 @@ function renderGraphView() {
     addBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     imgWrap.appendChild(addBtn);
 
-    // ○ 아이콘 (2개+ 선택 시, 마지막 선택 노드)
+    // ○ 아이콘 (2개+ 선택 시, 마지막 선택 노드 / 1명 선택 + 기존 그룹 소속)
     const grpBtn = document.createElement('div');
     const isGrpWith2 = graphSelectedIds.length === 2 && isLast;
     const isGrpAlone = graphSelectedIds.length >= 3 && isLast;
-    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone) ? ' visible' : '');
+    const isGrpSolo = graphSelectedIds.length === 1 && isLast && getGraphGroups().some(g => g.nodeIds.includes(p.id));
+    grpBtn.className = 'graph-node-grp' + ((isGrpWith2 || isGrpAlone || isGrpSolo) ? ' visible' : '');
     grpBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/></svg>`;
     grpBtn.onclick = (e) => { e.stopPropagation(); onGraphAddGroup(); };
     grpBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -4090,6 +4092,11 @@ function renderGroupPersonList(query) {
 // ── 그룹 추가/수정 바텀시트 열기 ──
 function onGraphAddGroup() {
   const ids = graphSelectedIds.slice();
+  if (ids.length === 1) {
+    const existingGroup = getGraphGroups().find(g => g.nodeIds.includes(ids[0]));
+    if (existingGroup) { openGroupSheet(existingGroup.id); return; }
+    return;
+  }
   if (ids.length < 2) return;
   groupSheetData = { nodeIds: ids, color: GROUP_COLORS[0], editGroupId: null };
   document.getElementById('groupSheetTitle').textContent = '그룹 추가';
@@ -4109,11 +4116,27 @@ function openGroupSheet(groupId) {
   if (svgEl) { svgEl._pendingLabel = group.name || ''; svgEl._labelInput = null; }
   renderGroupPreview();
   renderGroupColors();
+  document.getElementById('groupSheetDeleteBtn').style.display = '';
   document.getElementById('groupSheetOverlay').classList.add('open');
 }
 
 function closeGroupSheet() {
+  document.getElementById('groupSheetDeleteBtn').style.display = 'none';
   document.getElementById('groupSheetOverlay').classList.remove('open');
+}
+
+function deleteGroupSheet() {
+  const { editGroupId } = groupSheetData;
+  if (!editGroupId) return;
+  openConfirmDeleteDialog('그룹을 삭제하시겠습니까?', () => {
+    const groups = getGraphGroups();
+    const idx = groups.findIndex(g => g.id === editGroupId);
+    if (idx !== -1) groups.splice(idx, 1);
+    saveGraphGroups();
+    closeGroupSheet();
+    graphSelectedIds = [];
+    renderGraphView();
+  }, '삭제', '그룹이 삭제됩니다. 인물은 삭제되지 않습니다.');
 }
 
 function onGroupSheetOverlayClick(e) {
@@ -9810,6 +9833,7 @@ Object.assign(window, {
   closeGroupSheet,
   onGroupSheetOverlayClick, onGroupLabelInput,
   saveGroupSheet,
+  deleteGroupSheet,
   closeGroupConfirmSheet,
   execGroupConfirm,
   addPlotBlock,
