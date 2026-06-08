@@ -2312,11 +2312,8 @@ body { background:var(--surface); }
   <div class="era-sheet" onclick="event.stopPropagation(); _closeGroupPersonPopupIfOpen(event);" style="position:relative;">
     <div class="era-sheet-handle"></div>
     <div class="era-sheet-nav">
-      <div class="era-sheet-back" onclick="closeGroupSheet()">
-        <svg viewBox="0 0 256 256"><path d="M140.22,236L25.23,138.25c-5.93-5.04-5.93-14.21,0-19.25L140.22,21.26" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="30"/></svg>
-      </div>
+      <button class="era-sheet-save" id="groupSheetDeleteBtn" onclick="deleteGroupSheet()" style="visibility:hidden; background:none; color:var(--red); font-size:14px; padding:6px 8px; min-width:32px;">삭제</button>
       <span class="era-sheet-title" id="groupSheetTitle">그룹 추가</span>
-      <button class="era-sheet-save" id="groupSheetDeleteBtn" onclick="deleteGroupSheet()" style="display:none; background:none; color:var(--red); font-size:14px; padding:6px 8px;">삭제</button>
       <button class="era-sheet-save" onclick="saveGroupSheet()">저장</button>
     </div>
     <!-- 미리보기: SVG 바운더리 + 노드 + 라벨 입력창 -->
@@ -4116,12 +4113,12 @@ function openGroupSheet(groupId) {
   if (svgEl) { svgEl._pendingLabel = group.name || ''; svgEl._labelInput = null; }
   renderGroupPreview();
   renderGroupColors();
-  document.getElementById('groupSheetDeleteBtn').style.display = '';
+  document.getElementById('groupSheetDeleteBtn').style.visibility = 'visible';
   document.getElementById('groupSheetOverlay').classList.add('open');
 }
 
 function closeGroupSheet() {
-  document.getElementById('groupSheetDeleteBtn').style.display = 'none';
+  document.getElementById('groupSheetDeleteBtn').style.visibility = 'hidden';
   document.getElementById('groupSheetOverlay').classList.remove('open');
 }
 
@@ -6046,7 +6043,9 @@ function makePlotBlockEl(block, part, groupId) {
     }
   });
 
-  setTimeout(() => { if (block.expanded) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; } }, 0);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (block.expanded) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; }
+  }));
 
   const contentWrap = document.createElement('div');
   contentWrap.style.cssText = 'flex:1; min-width:0;';
