@@ -467,7 +467,7 @@ body { background:var(--surface); }
 .plot-block-toggle svg { width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; transition:transform 0.2s; transform-origin:center center; }
 .plot-block-toggle.expanded svg { transform:rotate(90deg); }
 .plot-block-preview { flex:1; font-size:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
-.plot-block-full { padding:0 4px 8px 8px; }
+.plot-block-full { padding:0 8px 8px; }
 .plot-block-full textarea { width:100%; border:none; background:none; resize:none; outline:none; font-family:inherit; font-size:12px; color:var(--text-primary); line-height:1.6; min-height:60px; }
 /* 플롯 드롭 인디케이터 */
 .plot-drop-indicator { height:0; background:transparent; margin:0; position:relative; overflow:visible; }
@@ -4368,8 +4368,14 @@ function saveGroupSheet() {
   const groups = getGraphGroups();
 
   if (editGroupId) {
-    const g = groups.find(g => g.id === editGroupId);
-    if (g) { g.name = name; g.color = color; g.nodeIds = nodeIds; }
+    const idx = groups.findIndex(g => g.id === editGroupId);
+    if (idx !== -1) {
+      if (nodeIds.length <= 1) {
+        groups.splice(idx, 1); // 1명 이하면 그룹 삭제
+      } else {
+        groups[idx].name = name; groups[idx].color = color; groups[idx].nodeIds = nodeIds;
+      }
+    }
   } else {
     // 이미 다른 그룹에 있는 노드 제거 (중복 없음)
     const usedIds = new Set(groups.flatMap(g => g.nodeIds));
@@ -4419,7 +4425,7 @@ function execGroupConfirm() {
     if (!group.nodeIds.includes(nodeId)) group.nodeIds.push(nodeId);
   } else if (type === 'exclude') {
     group.nodeIds = group.nodeIds.filter(id => id !== nodeId);
-    if (group.nodeIds.length === 0) {
+    if (group.nodeIds.length <= 1) {
       const idx = groups.findIndex(g => g.id === groupId);
       if (idx !== -1) groups.splice(idx, 1);
     }
@@ -6825,6 +6831,15 @@ function trashItem(id) {
   const groups = getPersonGroups();
   groups.forEach(g => { g.personIds = g.personIds.filter(pid => pid !== id); });
   if (item.type === '인물') savePersonGroups();
+  // 관계도 그룹에서도 제거 + 1명 이하면 그룹 삭제
+  if (item.type === '인물') {
+    const gGroups = getGraphGroups();
+    for (let i = gGroups.length - 1; i >= 0; i--) {
+      gGroups[i].nodeIds = gGroups[i].nodeIds.filter(nid => nid !== id);
+      if (gGroups[i].nodeIds.length <= 1) gGroups.splice(i, 1);
+    }
+    saveGraphGroups();
+  }
   ITEMS = ITEMS.filter(i => i.id !== id);
   STORY_DB[PROJECT_ID] = ITEMS;
   renderList(ITEMS);
