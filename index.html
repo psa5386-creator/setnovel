@@ -5949,7 +5949,7 @@ function makePlotBlockEl(block, part, groupId) {
 
   // textarea (펼친 상태)
   const ta = document.createElement('textarea');
-  ta.style.cssText = 'flex:1; min-width:0; border:none; background:none; resize:none; outline:none; font-family:inherit; font-size:12px; color:var(--text-primary); line-height:1.6; min-height:40px; padding:0; user-select:none; -webkit-user-select:none;';
+  ta.style.cssText = 'width:100%; box-sizing:border-box; border:none; background:none; resize:none; outline:none; font-family:inherit; font-size:12px; color:var(--text-primary); line-height:1.6; min-height:40px; padding:0; user-select:none; -webkit-user-select:none;';
   ta.value = block.content;
   ta.placeholder = '내용을 입력하세요...';
   ta.style.display = block.expanded ? '' : 'none';
